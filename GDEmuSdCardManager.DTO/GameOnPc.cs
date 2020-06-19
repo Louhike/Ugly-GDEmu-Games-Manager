@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace GDEmuSdCardManager.ViewModels
+namespace GDEmuSdCardManager.DTO
 {
     public class GameOnPc : BaseGame
     {

@@ -9,9 +9,9 @@
         Title="Ugly GDEmu Browser" Height="450" Width="943" MinWidth="750">
     <Grid>
         <Grid Background="#FFE5E5E5">
-            <TextBox x:Name="PcFolderTextBox" HorizontalAlignment="Left" Margin="10,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
             <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="67"/>
-            <TextBox x:Name="SdFolderTextBox" HorizontalAlignment="Left" Margin="10,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
             <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="67"/>
             <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
                 <ListView.View>
@@ -32,8 +32,8 @@
                 </ListView.View>
             </ListView>
             <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
-            <Button x:Name="CopyGamesToSdButton" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,70,8,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
-            <Button x:Name="RemoveSelectedGamesButton" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,100,8,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
+            <Button x:Name="CopyGamesToSdButton" IsEnabled="False" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,70,8,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
+            <Button x:Name="RemoveSelectedGamesButton" IsEnabled="False" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,100,8,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
             <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
             <Label x:Name="SdSpaceLabel" Content="" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
             <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Hidden" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>

@@ -4,11 +4,11 @@ using System.Threading.Tasks;
 
 namespace GDEmuSdCardManager.BLL
 {
-    public class FileManager
+    public static class FileManager
     {
         private static readonly string[] suffixes = { "Bytes", "KB", "MB", "GB", "TB", "PB" };
 
-        public long GetDirectorySize(string dirPath)
+        public static long GetDirectorySize(string dirPath)
         {
             if (Directory.Exists(dirPath) == false)
             {
@@ -36,7 +36,12 @@ namespace GDEmuSdCardManager.BLL
             return size;
         }
 
-        public string FormatSize(long bytes)
+        public static string GetDirectoryFormattedSize(string dirPath)
+        {
+            return FormatSize(GetDirectorySize(dirPath));
+        }
+
+        public static string FormatSize(long bytes)
         {
             int counter = 0;
             decimal number = (decimal)bytes;
@@ -49,7 +54,7 @@ namespace GDEmuSdCardManager.BLL
             return string.Format("{0:n1}{1}", number, suffixes[counter]);
         }
 
-        public async Task CopyDirectoryContentToAnother(string fromDirectory, string toDirectory)
+        public static async Task CopyDirectoryContentToAnother(string fromDirectory, string toDirectory)
         {
             if (!Directory.Exists(toDirectory))
             {
@@ -69,7 +74,7 @@ namespace GDEmuSdCardManager.BLL
             }
         }
 
-        public void RemoveAllFilesInDirectory(string directoryPath)
+        public static void RemoveAllFilesInDirectory(string directoryPath)
         {
             var di = new DirectoryInfo(directoryPath);
             foreach (FileInfo file in di.GetFiles())

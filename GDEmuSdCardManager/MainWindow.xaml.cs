@@ -1,12 +1,11 @@
 ﻿using GDEmuSdCardManager.BLL;
-using GDEmuSdCardManager.ViewModels;
+using GDEmuSdCardManager.DTO;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -22,9 +21,9 @@ namespace GDEmuSdCardManager
         private static string CopyGamesButtonTextWhileActive = "Copy selected games to SD";
         private static string CopyGamesButtonTextWhileCopying = "Copying files...";
         private static string ConfigurationPath = @".\config.json";
+        private bool IsScanSuccessful = false;
 
-        private List<GameOnSd> gamesOnSdCard;
-        private FileManager fileManager;
+        private IEnumerable<GameOnSd> gamesOnSdCard;
 
         public MainWindow()
         {
@@ -35,7 +34,6 @@ namespace GDEmuSdCardManager
             SdFolderTextBox.Text = config.SdDefaultDrive;
 
             gamesOnSdCard = new List<GameOnSd>();
-            fileManager = new FileManager();
         }
 
         private void PcBrowseButton_Click(object sender, RoutedEventArgs e)
@@ -54,15 +52,19 @@ namespace GDEmuSdCardManager
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
+            IsScanSuccessful = true;
             LoadGamesOnPc();
             LoadGamesOnSd();
+            CopyGamesToSdButton.IsEnabled = IsScanSuccessful;
+            RemoveSelectedGamesButton.IsEnabled = IsScanSuccessful;
         }
 
         private void LoadGamesOnPc()
         {
-            if(!Directory.Exists(PcFolderTextBox.Text))
+            if (!Directory.Exists(PcFolderTextBox.Text))
             {
                 WriteError("PC path is invalid");
+                IsScanSuccessful = false;
                 return;
             }
 
@@ -79,7 +81,7 @@ namespace GDEmuSdCardManager
                         FullPath = subFolder,
                         GdiName = System.IO.Path.GetFileName(gdiFile),
                         Name = System.IO.Path.GetFileName(subFolder),
-                        FormattedSize = fileManager.FormatSize(fileManager.GetDirectorySize(subFolder))
+                        FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
                     });
                 }
             }
@@ -90,36 +92,24 @@ namespace GDEmuSdCardManager
 
         private void LoadGamesOnSd()
         {
-            if (!Directory.Exists(SdFolderTextBox.Text))
+            var sdCardManager = new SdCardManager(SdFolderTextBox.Text);
+            try
             {
-                WriteError("SD path is invalid");
-                return;
+                gamesOnSdCard = sdCardManager.GetGames();
+                SdFolderTextBox.BorderBrush = Brushes.LightGray;
             }
-
-            var subFoldersList = Directory.EnumerateDirectories(SdFolderTextBox.Text);
-            gamesOnSdCard = new List<GameOnSd>();
-
-            foreach (var subFolder in subFoldersList)
+            catch(FileNotFoundException e)
             {
-                var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
-                if (gdiFile != null)
-                {
-                    gamesOnSdCard.Add(new GameOnSd
-                    {
-                        FullPath = subFolder,
-                        GdiName = System.IO.Path.GetFileName(gdiFile),
-                        Name = System.IO.Path.GetFileName(subFolder),
-                        FormattedSize = fileManager.FormatSize(fileManager.GetDirectorySize(subFolder))
-                    });
-                }
+                WriteError(e.Message);
+                IsScanSuccessful = false;
+                SdFolderTextBox.BorderBrush = Brushes.Red;
             }
 
             UpdatePcFoldersIsInSdCard();
 
-            DriveInfo driveInfo = new DriveInfo(SdFolderTextBox.Text);
-            long freeSpace = driveInfo.AvailableFreeSpace;
+            long freeSpace = sdCardManager.GetFreeSpace();
+            SdSpaceLabel.Content = FileManager.FormatSize(freeSpace);
 
-            SdSpaceLabel.Content = fileManager.FormatSize(freeSpace);
             WriteSuccess("Games on SD scanned");
         }
 
@@ -130,7 +120,7 @@ namespace GDEmuSdCardManager
             {
                 var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GdiName == itemToRemove.GdiName);
 
-                fileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
+                FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
             }
 
             WriteSuccess($"Games deleted");
@@ -173,7 +163,7 @@ namespace GDEmuSdCardManager
                 } while (string.IsNullOrEmpty(availableFolder));
 
                 string newPath = System.IO.Path.GetFullPath(SdFolderTextBox.Text + @"\" + availableFolder);
-                await fileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
+                await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
 
                 CopyProgressBar.Value++;
                 GamesCopiedLabel.Content = $"{CopyProgressBar.Value}/{gamesToCopy.Count()}";

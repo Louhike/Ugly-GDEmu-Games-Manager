@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GDEmuSdCardManager.BLL\GDEmuSdCardManager.BLL.csproj" />
+    <ProjectReference Include="..\GDEmuSdCardManager.DTO\GDEmuSdCardManager.DTO.csproj" />
   </ItemGroup>
 
   <ItemGroup>

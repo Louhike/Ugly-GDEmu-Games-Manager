@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDEmuSdCardManager", "GDEmuSdCardManager\GDEmuSdCardManager.csproj", "{DDD74C9E-1752-4CD0-B104-57AABF3DDD2E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GDEmuSdCardManager", "GDEmuSdCardManager\GDEmuSdCardManager.csproj", "{DDD74C9E-1752-4CD0-B104-57AABF3DDD2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDEmuSdCardManager.BLL", "GDEmuSdCardManager.BLL\GDEmuSdCardManager.BLL.csproj", "{DE79B4D3-DEDD-4C01-899D-4DC9C7139C81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GDEmuSdCardManager.BLL", "GDEmuSdCardManager.BLL\GDEmuSdCardManager.BLL.csproj", "{DE79B4D3-DEDD-4C01-899D-4DC9C7139C81}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GDEmuSdCardManager.DTO", "GDEmuSdCardManager.DTO\GDEmuSdCardManager.DTO.csproj", "{98D359F0-EE20-4B61-8563-878AC1D03EBF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{DE79B4D3-DEDD-4C01-899D-4DC9C7139C81}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DE79B4D3-DEDD-4C01-899D-4DC9C7139C81}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DE79B4D3-DEDD-4C01-899D-4DC9C7139C81}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98D359F0-EE20-4B61-8563-878AC1D03EBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98D359F0-EE20-4B61-8563-878AC1D03EBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98D359F0-EE20-4B61-8563-878AC1D03EBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98D359F0-EE20-4B61-8563-878AC1D03EBF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
