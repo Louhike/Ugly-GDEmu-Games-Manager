@@ -7,6 +7,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -22,6 +23,7 @@ namespace GDEmuSdCardManager
         private static string CopyGamesButtonTextWhileCopying = "Copying files...";
         private static string ConfigurationPath = @".\config.json";
         private bool IsScanSuccessful = false;
+        private bool HavePathsChangedSinceLastScanSuccessful = true;
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
@@ -30,6 +32,19 @@ namespace GDEmuSdCardManager
             InitializeComponent();
             LoadDefaultPaths();
             gamesOnSdCard = new List<GameOnSd>();
+            PcFolderTextBox.TextChanged += OnFolderChanged;
+            SdFolderTextBox.TextChanged += OnFolderChanged;
+        }
+
+        private void OnFolderChanged(object sender, TextChangedEventArgs e)
+        {
+            if(!HavePathsChangedSinceLastScanSuccessful)
+            {
+                CopyGamesToSdButton.IsEnabled = false;
+                RemoveSelectedGamesButton.IsEnabled = false;
+                HavePathsChangedSinceLastScanSuccessful = true;
+                WriteInfo("You have changed a path. You must rescan the folders");
+            }
         }
 
         private void LoadDefaultPaths()
@@ -60,10 +75,12 @@ namespace GDEmuSdCardManager
             LoadGamesOnSd();
             CopyGamesToSdButton.IsEnabled = IsScanSuccessful;
             RemoveSelectedGamesButton.IsEnabled = IsScanSuccessful;
+            HavePathsChangedSinceLastScanSuccessful = false;
         }
 
         private void LoadGamesOnPc()
         {
+            PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
             if (!Directory.Exists(PcFolderTextBox.Text))
             {
                 WriteError("PC path is invalid");
@@ -107,9 +124,12 @@ namespace GDEmuSdCardManager
                 IsScanSuccessful = false;
                 SdFolderTextBox.BorderBrush = Brushes.Red;
                 gamesOnSdCard = new List<GameOnSd>();
+                return;
             }
-
-            UpdatePcFoldersIsInSdCard();
+            finally
+            {
+                UpdatePcFoldersIsInSdCard();
+            }
 
             long freeSpace = sdCardManager.GetFreeSpace();
             SdSpaceLabel.Content = FileManager.FormatSize(freeSpace);
