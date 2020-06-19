@@ -139,9 +139,11 @@ namespace GDEmuSdCardManager
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            WriteInfo($"Deleting {PcFoldersWithGdiListView.SelectedItems.Count} game(s) from SD card...");
-            foreach (GameOnPc itemToRemove in PcFoldersWithGdiListView.SelectedItems)
+            var gamesToRemove = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().Where(g => gamesOnSdCard.Any(sg => sg.GdiName == g.GdiName));
+            WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
+            foreach (GameOnPc itemToRemove in gamesToRemove)
             {
+                WriteInfo($"Deleting {itemToRemove.GdiName}...");
                 var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GdiName == itemToRemove.GdiName);
 
                 FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
@@ -153,7 +155,6 @@ namespace GDEmuSdCardManager
 
         private async void CopySelectedGames(object sender, RoutedEventArgs e)
         {
-            WriteInfo($"Copying {PcFoldersWithGdiListView.SelectedItems.Count} game(s) to SD card...");
             CopyGamesToSdButton.IsEnabled = false;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileCopying;
             var sdSubFoldersListWithGames = Directory.EnumerateDirectories(SdFolderTextBox.Text).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
@@ -161,23 +162,22 @@ namespace GDEmuSdCardManager
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
 
             var gamesToCopy = pcGames.Where(si => !gamesOnSdCard.Any(f => f.GdiName == si.GdiName));
+            WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
             CopyProgressLabel.Visibility = Visibility.Visible;
             CopyProgressBar.Maximum = gamesToCopy.Count();
             CopyProgressBar.Value = 0;
             CopyProgressBar.Visibility = Visibility.Visible;
 
-            GamesCopiedTextLabel.Visibility = Visibility.Visible;
-            GamesCopiedLabel.Content = $"0/{gamesToCopy.Count()}";
-            GamesCopiedLabel.Visibility = Visibility.Visible;
-
             short index = 2;
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
+                WriteInfo($"Copying {selectedItem.GdiName}...");
                 string availableFolder = string.Empty;
                 do
                 {
-                    string formattedIndex = index.ToString("D2");
+                    string format = index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+                    string formattedIndex = index.ToString(format);
                     if (!sdSubFoldersListWithGames.Any(f => System.IO.Path.GetFileName(f) == formattedIndex))
                     {
                         availableFolder = formattedIndex;
@@ -190,7 +190,7 @@ namespace GDEmuSdCardManager
                 await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
 
                 CopyProgressBar.Value++;
-                GamesCopiedLabel.Content = $"{CopyProgressBar.Value}/{gamesToCopy.Count()}";
+                WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
             }
 
             CopyGamesToSdButton.IsEnabled = true;
