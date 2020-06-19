@@ -196,6 +196,8 @@ namespace GDEmuSdCardManager
 
                 if(noAvailableFolder == false)
                 {
+                    string newPath = System.IO.Path.GetFullPath(SdFolderTextBox.Text + @"\" + availableFolder);
+                    await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
                     CopyProgressBar.Value++;
                     WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
                 }
@@ -206,7 +208,7 @@ namespace GDEmuSdCardManager
 
             if(noAvailableFolder)
             {
-                WriteInfo($"{CopyProgressBar.Value} games were copied.");
+                WriteInfo($"There was an error. {CopyProgressBar.Value} games were copied.");
             }
             else
             {
