@@ -34,11 +34,18 @@ namespace GDEmuSdCardManager.BLL
                 var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
                 if (gdiFile != null)
                 {
+                    var bin1File = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetFileName(f) == "track01.bin");
+                    string gameName = "Unknown name";
+                    // Reading the game name
+                    byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
+                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Trim();
+
                     gamesOnSdCard.Add(new GameOnSd
                     {
+                        GameName = gameName,
                         FullPath = subFolder,
-                        GdiName = Path.GetFileName(gdiFile),
-                        Name = Path.GetFileName(subFolder),
+                        //GdiName = Path.GetFileName(gdiFile),
+                        Path = Path.GetFileName(subFolder),
                         FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
                     });
                 }

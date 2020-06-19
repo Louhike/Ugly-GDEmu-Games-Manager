@@ -17,8 +17,11 @@
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=Name}" 
-                                Header="Folder" Width="400"/>
+                                "{Binding Path=GameName}" 
+                                Header="Game" Width="150" />
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=Path}" 
+                                Header="Folder" Width="300"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=FormattedSize}" 
                                 Header="Size" Width="75"/>

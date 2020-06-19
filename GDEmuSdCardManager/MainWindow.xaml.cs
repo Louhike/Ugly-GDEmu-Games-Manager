@@ -94,13 +94,21 @@ namespace GDEmuSdCardManager
             foreach (var subFolder in subFoldersList)
             {
                 var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+
                 if (gdiFile != null)
                 {
+                    var bin1File = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetFileName(f) == "track01.bin");
+                    string gameName = "Unknown name";
+                    // Reading the game name
+                    byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
+                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Trim();
+
                     subFoldersWithGdiList.Add(new GameOnPc
                     {
                         FullPath = subFolder,
-                        GdiName = System.IO.Path.GetFileName(gdiFile),
-                        Name = System.IO.Path.GetFileName(subFolder),
+                        GameName = gameName,
+                        //GdiName = System.IO.Path.GetFileName(gdiFile),
+                        Path = System.IO.Path.GetFileName(subFolder),
                         FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
                     });
                 }
@@ -139,12 +147,12 @@ namespace GDEmuSdCardManager
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            var gamesToRemove = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().Where(g => gamesOnSdCard.Any(sg => sg.GdiName == g.GdiName));
+            var gamesToRemove = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().Where(g => gamesOnSdCard.Any(sg => sg.GameName == g.GameName));
             WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
             foreach (GameOnPc itemToRemove in gamesToRemove)
             {
-                WriteInfo($"Deleting {itemToRemove.GdiName}...");
-                var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GdiName == itemToRemove.GdiName);
+                WriteInfo($"Deleting {itemToRemove.GameName}...");
+                var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GameName == itemToRemove.GameName);
 
                 FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
             }
@@ -160,7 +168,7 @@ namespace GDEmuSdCardManager
             var sdSubFoldersListWithGames = Directory.EnumerateDirectories(SdFolderTextBox.Text).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
-            var gamesToCopy = pcGames.Where(si => !gamesOnSdCard.Any(f => f.GdiName == si.GdiName));
+            var gamesToCopy = pcGames.Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName));
 
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
@@ -174,7 +182,7 @@ namespace GDEmuSdCardManager
             bool noAvailableFolder = false;
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
-                WriteInfo($"Copying {selectedItem.GdiName}...");
+                WriteInfo($"Copying {selectedItem.GameName}...");
                 string availableFolder = string.Empty;
                 do
                 {
@@ -227,10 +235,10 @@ namespace GDEmuSdCardManager
 
             foreach (GameOnPc pcViewItem in pcItemsSource)
             {
-                if (gamesOnSdCard.Any(f => f.GdiName == pcViewItem.GdiName))
+                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName))
                 {
                     pcViewItem.IsInSdCard = "✓";
-                    pcViewItem.SdFolder = gamesOnSdCard.First(f => f.GdiName == pcViewItem.GdiName).Name;
+                    pcViewItem.SdFolder = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName).Path;
                 }
                 else
                 {
