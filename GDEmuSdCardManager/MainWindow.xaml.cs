@@ -130,11 +130,7 @@ namespace GDEmuSdCardManager
             {
                 var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GdiName == itemToRemove.GdiName);
 
-                var di = new DirectoryInfo(gameOnSdToRemove.FullPath);
-                foreach (FileInfo file in di.GetFiles())
-                {
-                    file.Delete();
-                }
+                fileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
             }
 
             WriteSuccess($"Games deleted");

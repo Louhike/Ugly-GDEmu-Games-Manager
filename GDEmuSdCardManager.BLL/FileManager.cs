@@ -68,5 +68,14 @@ namespace GDEmuSdCardManager.BLL
                 }
             }
         }
+
+        public void RemoveAllFilesInDirectory(string directoryPath)
+        {
+            var di = new DirectoryInfo(directoryPath);
+            foreach (FileInfo file in di.GetFiles())
+            {
+                file.Delete();
+            }
+        }
     }
 }
