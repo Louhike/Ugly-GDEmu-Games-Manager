@@ -30,12 +30,10 @@ namespace GDEmuSdCardManager
         {
             InitializeComponent();
 
-            if (File.Exists(ConfigurationPath))
-            {
-                var config = JsonSerializer.Deserialize<UGDEBConfiguration>(File.ReadAllText(ConfigurationPath));
-                PcFolderTextBox.Text = config.PcDefaultPath;
-                SdFolderTextBox.Text = config.SdDefaultDrive;
-            }
+            var config = UGDEBConfiguration.LoadConfiguration(ConfigurationPath);
+            PcFolderTextBox.Text = config.PcDefaultPath;
+            SdFolderTextBox.Text = config.SdDefaultDrive;
+
             gamesOnSdCard = new List<GameOnSd>();
             fileManager = new FileManager();
         }
@@ -58,7 +56,6 @@ namespace GDEmuSdCardManager
         {
             LoadGamesOnPc();
             LoadGamesOnSd();
-            WriteInfo("Games list updated");
         }
 
         private void LoadGamesOnPc()
@@ -88,6 +85,7 @@ namespace GDEmuSdCardManager
             }
 
             PcFoldersWithGdiListView.ItemsSource = subFoldersWithGdiList;
+            WriteSuccess("Games on PC scanned");
         }
 
         private void LoadGamesOnSd()
@@ -122,6 +120,7 @@ namespace GDEmuSdCardManager
             long freeSpace = driveInfo.AvailableFreeSpace;
 
             SdSpaceLabel.Content = fileManager.FormatSize(freeSpace);
+            WriteSuccess("Games on SD scanned");
         }
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
@@ -138,7 +137,7 @@ namespace GDEmuSdCardManager
                 }
             }
 
-            WriteInfo($"Games deleted");
+            WriteSuccess($"Games deleted");
             LoadAllButton_Click(null, null);
         }
 
@@ -187,7 +186,7 @@ namespace GDEmuSdCardManager
             CopyGamesToSdButton.IsEnabled = true;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileActive;
 
-            WriteInfo($"Games copied");
+            WriteSuccess($"Games copied");
             LoadAllButton_Click(null, null);
         }
 
@@ -216,6 +215,17 @@ namespace GDEmuSdCardManager
             view.Refresh();
         }
 
+        private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var config = new UGDEBConfiguration()
+            {
+                PcDefaultPath = PcFolderTextBox.Text,
+                SdDefaultDrive = SdFolderTextBox.Text
+            };
+
+            config.Save(ConfigurationPath);
+        }
+
         private void WriteError(string message)
         {
             var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
@@ -232,18 +242,12 @@ namespace GDEmuSdCardManager
             InfoRichTextBox.ScrollToEnd();
         }
 
-        private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
+        private void WriteSuccess(string message)
         {
-            if (File.Exists(ConfigurationPath))
-            {
-                var config = new UGDEBConfiguration()
-                {
-                    PcDefaultPath = PcFolderTextBox.Text,
-                    SdDefaultDrive = SdFolderTextBox.Text
-                };
-
-                File.WriteAllText(ConfigurationPath, JsonSerializer.Serialize<UGDEBConfiguration>(config));
-            }
+            var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
+            error.Foreground = Brushes.Blue;
+            InfoRichTextBox.Document.Blocks.Add(error);
+            InfoRichTextBox.ScrollToEnd();
         }
     }
 }
