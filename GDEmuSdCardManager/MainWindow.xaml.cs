@@ -160,8 +160,8 @@ namespace GDEmuSdCardManager
             var sdSubFoldersListWithGames = Directory.EnumerateDirectories(SdFolderTextBox.Text).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
-
             var gamesToCopy = pcGames.Where(si => !gamesOnSdCard.Any(f => f.GdiName == si.GdiName));
+
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
             CopyProgressLabel.Visibility = Visibility.Visible;
@@ -170,6 +170,8 @@ namespace GDEmuSdCardManager
             CopyProgressBar.Visibility = Visibility.Visible;
 
             short index = 2;
+
+            bool noAvailableFolder = false;
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
                 WriteInfo($"Copying {selectedItem.GdiName}...");
@@ -184,19 +186,32 @@ namespace GDEmuSdCardManager
                     }
 
                     index++;
+                    if(index == 10000)
+                    {
+                        WriteError($"You cannot have more than 9999 games on your SD card.");                        
+                        noAvailableFolder = true;
+                        break;
+                    }
                 } while (string.IsNullOrEmpty(availableFolder));
 
-                string newPath = System.IO.Path.GetFullPath(SdFolderTextBox.Text + @"\" + availableFolder);
-                await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
-
-                CopyProgressBar.Value++;
-                WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
+                if(noAvailableFolder == false)
+                {
+                    CopyProgressBar.Value++;
+                    WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
+                }
             }
 
             CopyGamesToSdButton.IsEnabled = true;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileActive;
 
-            WriteSuccess($"Games copied");
+            if(noAvailableFolder)
+            {
+                WriteInfo($"{CopyProgressBar.Value} games were copied.");
+            }
+            else
+            {
+                WriteSuccess($"Games copied");
+            }
             LoadAllButton_Click(null, null);
         }
 

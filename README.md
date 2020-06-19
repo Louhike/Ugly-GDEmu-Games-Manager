@@ -16,10 +16,10 @@ It also shows the free space on your SD card and the size of your games.
 
 ## Roadmap
 
-1. Move all file manipulation code to BLL
-2. Manage up to 9999 games
-2. Copy files from SD to PC
-3. Increment the progress bar more gradually by copying files chunk by chunk
+1. Not require anymore to have unique GDI filenames
+2. Move all file manipulation code to BLL
+3. Copy files from SD to PC
+4. Increment the progress bar more gradually by copying files chunk by chunk
 
 
 ## Would be nice to have
