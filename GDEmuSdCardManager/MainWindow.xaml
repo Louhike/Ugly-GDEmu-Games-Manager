@@ -1,0 +1,51 @@
+﻿<Window x:Class="GDEmuSdCardManager.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GDEmuSdCardManager"
+        mc:Ignorable="d"
+        WindowStyle="SingleBorderWindow"
+        Title="Ugly GDEmu Browser" Height="450" Width="943" MinWidth="750">
+    <Grid>
+        <Grid Background="#FFE5E5E5">
+            <TextBox x:Name="PcFolderTextBox" HorizontalAlignment="Left" Margin="10,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="67"/>
+            <TextBox x:Name="SdFolderTextBox" HorizontalAlignment="Left" Margin="10,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="67"/>
+            <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
+                <ListView.View>
+                    <GridView>
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=Name}" 
+                                Header="Folder" Width="400"/>
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=FormattedSize}" 
+                                Header="Size" Width="75"/>
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=IsInSdCard}" 
+                                Header="In SD?" Width="50"/>
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=SdFolder}" 
+                                Header="SD folder" Width="70"/>
+                    </GridView>
+                </ListView.View>
+            </ListView>
+            <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
+            <Button x:Name="CopyGamesToSdButton" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,70,8,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
+            <Button x:Name="RemoveSelectedGamesButton" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,100,8,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
+            <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
+            <Label x:Name="SdSpaceLabel" Content="" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
+            <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Hidden" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
+            <ProgressBar x:Name="CopyProgressBar" Visibility="Hidden" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
+            <Label x:Name="GamesCopiedTextLabel" Visibility="Hidden" Content="Games copied:" Margin="0,209,122,0" VerticalAlignment="Top" RenderTransformOrigin="0.319,0.552" HorizontalAlignment="Right" Width="88"/>
+            <Label x:Name="GamesCopiedLabel" Visibility="Hidden" Content="0/0" Margin="0,209,81,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="28"/>
+            <Button x:Name="SaveAsDefaultsButton" Content="Save as defaults" Margin="523,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="103" Height="50"/>
+            <Label Content="Info:" Margin="0,247,165,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="41"/>
+            <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" Margin="0,278,8,10" HorizontalAlignment="Right" Width="202" Block.LineHeight="1">
+                <FlowDocument>
+                </FlowDocument>
+            </RichTextBox>
+        </Grid>
+    </Grid>
+</Window>
