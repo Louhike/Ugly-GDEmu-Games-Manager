@@ -28,12 +28,15 @@ namespace GDEmuSdCardManager
         public MainWindow()
         {
             InitializeComponent();
+            LoadDefaultPaths();
+            gamesOnSdCard = new List<GameOnSd>();
+        }
 
+        private void LoadDefaultPaths()
+        {
             var config = UGDEBConfiguration.LoadConfiguration(ConfigurationPath);
             PcFolderTextBox.Text = config.PcDefaultPath;
             SdFolderTextBox.Text = config.SdDefaultDrive;
-
-            gamesOnSdCard = new List<GameOnSd>();
         }
 
         private void PcBrowseButton_Click(object sender, RoutedEventArgs e)
@@ -103,6 +106,7 @@ namespace GDEmuSdCardManager
                 WriteError(e.Message);
                 IsScanSuccessful = false;
                 SdFolderTextBox.BorderBrush = Brushes.Red;
+                gamesOnSdCard = new List<GameOnSd>();
             }
 
             UpdatePcFoldersIsInSdCard();
@@ -210,6 +214,11 @@ namespace GDEmuSdCardManager
             };
 
             config.Save(ConfigurationPath);
+        }
+
+        private void LoadDefaultsPathsButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadDefaultPaths();
         }
 
         private void WriteError(string message)

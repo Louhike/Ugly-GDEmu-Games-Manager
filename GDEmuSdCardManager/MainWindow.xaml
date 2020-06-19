@@ -10,9 +10,9 @@
     <Grid>
         <Grid Background="#FFE5E5E5">
             <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
-            <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="67"/>
+            <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="57"/>
             <TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
-            <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="67"/>
+            <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>
             <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
                 <ListView.View>
                     <GridView>
@@ -40,12 +40,19 @@
             <ProgressBar x:Name="CopyProgressBar" Visibility="Hidden" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
             <Label x:Name="GamesCopiedTextLabel" Visibility="Hidden" Content="Games copied:" Margin="0,209,122,0" VerticalAlignment="Top" RenderTransformOrigin="0.319,0.552" HorizontalAlignment="Right" Width="88"/>
             <Label x:Name="GamesCopiedLabel" Visibility="Hidden" Content="0/0" Margin="0,209,81,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="28"/>
-            <Button x:Name="SaveAsDefaultsButton" Content="Save as defaults" Margin="523,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="103" Height="50"/>
+            <Button x:Name="SaveAsDefaultsButton" Content="Save as&#xa;defaults" Margin="513,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="55" Height="50"/>
             <Label Content="Info:" Margin="0,247,165,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="41"/>
             <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" Margin="0,278,8,10" HorizontalAlignment="Right" Width="202" Block.LineHeight="1">
                 <FlowDocument>
                 </FlowDocument>
             </RichTextBox>
+            <Button x:Name="LoadDefaultsPathsButton" Margin="571,10,0,0" VerticalAlignment="Top" Click="LoadDefaultsPathsButton_Click" HorizontalAlignment="Left" Width="55" Height="50">
+                <StackPanel>
+                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">Load</TextBlock>
+                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">defaults</TextBlock>
+                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">paths</TextBlock>
+                </StackPanel>
+            </Button>
         </Grid>
     </Grid>
 </Window>
