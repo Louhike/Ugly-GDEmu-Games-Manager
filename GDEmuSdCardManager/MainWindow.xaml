@@ -48,8 +48,8 @@
                 </ListView.View>
             </ListView>
             <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
-            <Button x:Name="CopyGamesToSdButton" IsEnabled="False" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,70,8,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
-            <Button x:Name="RemoveSelectedGamesButton" IsEnabled="False" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,100,8,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
+            <Button x:Name="CopyGamesToSdButton" IsEnabled="False" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,90,7,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
+            <Button x:Name="RemoveSelectedGamesButton" IsEnabled="False" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,115,7,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
             <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
             <Label x:Name="SdSpaceLabel" Content="/" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
             <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Hidden" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
@@ -67,6 +67,9 @@
                     <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">paths</TextBlock>
                 </StackPanel>
             </Button>
+            <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" HorizontalAlignment="Left" Height="25" Margin="736,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
+            <TextBox HorizontalAlignment="Left" FontSize="9" IsReadOnly="True" Margin="734,35,0,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" Width="201"/>
+
         </Grid>
     </Grid>
 </Window>
