@@ -59,7 +59,7 @@ namespace GDEmuSdCardManager.BLL
 
         public short FindAvailableFolderForGame(short index = 2)
         {
-            var sdSubFoldersListWithGames = Directory.EnumerateDirectories(DrivePath).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
+            var sdSubFoldersListWithGames = Directory.EnumerateDirectories(DrivePath).Where(f => Directory.EnumerateFiles(f).Any());
 
             do
             {
