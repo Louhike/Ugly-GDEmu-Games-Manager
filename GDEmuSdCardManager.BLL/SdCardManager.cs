@@ -1,5 +1,6 @@
 ﻿using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -16,8 +17,10 @@ namespace GDEmuSdCardManager.BLL
             DrivePath = path;
         }
 
-        public IEnumerable<GameOnSd> GetGames()
+        public IEnumerable<GameOnSd> GetGames(out List<string> errors)
         {
+            errors = new List<string>();
+
             if (!Directory.Exists(DrivePath))
             {
                 throw new FileNotFoundException("SD path is invalid");
@@ -36,15 +39,15 @@ namespace GDEmuSdCardManager.BLL
                 var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
                 if (gdiFile != null)
                 {
-                    string gameName = GameManager.GetName(subFolder, gdiFile);
-
-                    gamesOnSdCard.Add(new GameOnSd
+                    try
                     {
-                        GameName = gameName,
-                        FullPath = subFolder,
-                        Path = Path.GetFileName(subFolder),
-                        FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
-                    });
+                        var game = GameManager.ExtractSdGameData(subFolder);
+                        gamesOnSdCard.Add(game);
+                    }
+                    catch(Exception error)
+                    {
+                        errors.Add(error.Message);
+                    }
                 }
             }
 
@@ -86,9 +89,15 @@ namespace GDEmuSdCardManager.BLL
                 string tempPath = @".\Extract Re-Build GDI's\temp_game_copy";
                 Directory.CreateDirectory(tempPath);
                 FileManager.RemoveAllFilesInDirectory(tempPath);
+                if(Directory.Exists(tempPath + " Extracted"))
+                {
+                    Directory.Delete(tempPath + " Extracted", true);
+                }
+
                 await FileManager.CopyDirectoryContentToAnother(
                     gamePath,
-                    tempPath);
+                    tempPath,
+                    false);
                 var commandResult = await Command
                     .Run(@".\Extract Re-Build GDI's\Extract GDI Image.bat", tempPath)
                     .Task;
@@ -108,7 +117,8 @@ namespace GDEmuSdCardManager.BLL
 
                 await FileManager.CopyDirectoryContentToAnother(
                     tempPath,
-                    destinationFolder);
+                    destinationFolder,
+                    true);
 
                 Directory.Delete(tempPath, true);
 
@@ -116,7 +126,7 @@ namespace GDEmuSdCardManager.BLL
             }
             else
             {
-                await FileManager.CopyDirectoryContentToAnother(gamePath, destinationFolder);
+                await FileManager.CopyDirectoryContentToAnother(gamePath, destinationFolder, true);
             }
         }
 

@@ -90,6 +90,7 @@ namespace GDEmuSdCardManager
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
+            WriteInfo("Starting scan...");
             IsScanSuccessful = true;
             LoadGamesOnPc();
             LoadGamesOnSd();
@@ -125,19 +126,22 @@ namespace GDEmuSdCardManager
 
                 if (gdiFile != null)
                 {
-                    string gameName = GameManager.GetName(subFolder, gdiFile);
-
-                    subFoldersWithGdiList.Add(new GameOnPc
+                    GameOnPc game;
+                    try
                     {
-                        FullPath = subFolder,
-                        GameName = gameName,
-                        Path = Path.GetFileName(subFolder),
-                        FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
-                    });
+                        game = GameManager.ExtractPcGameData(subFolder);
+                    }
+                    catch(Exception error)
+                    {
+                        WriteError(error.Message);
+                        continue;
+                    }
+
+                    subFoldersWithGdiList.Add(game);
                 }
             }
 
-            PcFoldersWithGdiListView.ItemsSource = subFoldersWithGdiList;
+            PcFoldersWithGdiListView.ItemsSource = subFoldersWithGdiList.OrderBy(f => f.GameName);
             WriteSuccess("Games on PC scanned");
         }
 
@@ -151,7 +155,15 @@ namespace GDEmuSdCardManager
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
             try
             {
-                gamesOnSdCard = sdCardManager.GetGames();
+                List<string> errors;
+                gamesOnSdCard = sdCardManager.GetGames(out errors);
+                if(errors.Any())
+                {
+                    foreach(var error in errors)
+                    {
+                        WriteError(error);
+                    }
+                }
                 SdFolderComboBox.BorderBrush = Brushes.LightGray;
             }
             catch (FileNotFoundException e)

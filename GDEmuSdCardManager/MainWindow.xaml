@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GDEmuSdCardManager"
         mc:Ignorable="d"
         WindowStyle="SingleBorderWindow"
-        Title="Ugly GDEmu File Manager" Height="450" Width="943" MinWidth="750">
+        Title="Ugly GDEmu File Manager" Height="450" Width="1020" MinWidth="750">
     <Grid>
         <Grid Background="#FFE5E5E5">
             <Label Content="Games directory" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="98"/>
@@ -22,6 +22,9 @@
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=GameName}" 
                                 Header="Game" Width="150" />
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=Disc}" 
+                                Header="Disc" Width="80" />
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=Path}" 
                                 Header="Folder" Width="200"/>

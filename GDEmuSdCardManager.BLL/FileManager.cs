@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace GDEmuSdCardManager.BLL
@@ -54,7 +55,7 @@ namespace GDEmuSdCardManager.BLL
             return string.Format("{0:n1}{1}", number, suffixes[counter]);
         }
 
-        public static async Task CopyDirectoryContentToAnother(string fromDirectory, string toDirectory)
+        public static async Task CopyDirectoryContentToAnother(string fromDirectory, string toDirectory, bool renameGdiFileToDisc)
         {
             if (!Directory.Exists(toDirectory))
             {
@@ -67,7 +68,15 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var fileToCopy in Directory.EnumerateFiles(fromDirectory))
             {
-                string filePath = Path.GetFullPath(toDirectory + @"\" + Path.GetFileName(fileToCopy));
+                string fileName = Path.GetFileNameWithoutExtension(fileToCopy);
+                string fileExtension = Path.GetExtension(fileToCopy);
+                if(fileExtension == ".gdi" && renameGdiFileToDisc)
+                {
+                    fileName = "disc";
+                }
+
+                fileName += fileExtension;
+                string filePath = Path.GetFullPath(toDirectory + @"\" + fileName);
                 using (FileStream SourceStream = File.Open(fileToCopy, FileMode.Open))
                 {
                     using (FileStream DestinationStream = File.Create(filePath))
