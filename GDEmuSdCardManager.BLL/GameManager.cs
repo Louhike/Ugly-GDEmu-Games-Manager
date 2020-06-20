@@ -45,7 +45,7 @@ namespace GDEmuSdCardManager.BLL
                 GameName = game.GameName,
                 Hwid = game.Hwid,
                 Maker = game.Maker,
-                Path = game.Path,
+                Path = game.FullPath,
                 Perif = game.Perif,
                 Producer = game.Producer,
                 ProductN = game.ProductN,
