@@ -1,0 +1,18 @@
+Instructions....
+
+First things first...
+
+Make sure your game folder is like so.
+
+- Game folder
+	- .gdi file
+	- Track files
+
+
+
+1) Place the game Game directory you want to extract into the same directory as the batch files & config.ini file.
+2) Drag said game directory onto "Extract GDI Image.bat"
+3) You will now have a new folder "Game name Extracted" this is the content of the game.
+4) Patch, mod or do what you need to do.
+5) Drag the Extracted folder onto either "Build Truncated GDI Image.bat" or "Build GDI Image.bat" to rebuild the GDI image.
+6) The original Game folder has been updated with the new changes you made, put that on your HDD/SD & play.

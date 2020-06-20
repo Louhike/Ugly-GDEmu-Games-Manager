@@ -1,0 +1,7 @@
+[Credits]
+Thanks to FamilyGuy for gditools and S4pph4rad for GDIbuilder
+
+gditools is open-source, licensed under GPLv3 for more info
+and source you can visit the: http://sourceforge.net/p/dcisotools/
+
+GDIbuilder Site: http://projects.sappharad.com/tools/gdibuilder.html

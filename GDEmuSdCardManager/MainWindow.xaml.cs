@@ -1,11 +1,14 @@
 ﻿using GDEmuSdCardManager.BLL;
 using GDEmuSdCardManager.DTO;
+using Medallion.Shell;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -68,7 +71,7 @@ namespace GDEmuSdCardManager
             SdFolderTextBox.Text = browserDialog.SelectedPath;
         }
 
-        private void LoadAllButton_Click(object sender, RoutedEventArgs e)
+        private async void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
             IsScanSuccessful = true;
             LoadGamesOnPc();
@@ -101,7 +104,7 @@ namespace GDEmuSdCardManager
                     string gameName = "Unknown name";
                     // Reading the game name
                     byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Trim();
+                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0',' ').Trim();
 
                     subFoldersWithGdiList.Add(new GameOnPc
                     {
@@ -145,6 +148,33 @@ namespace GDEmuSdCardManager
             WriteSuccess("Games on SD scanned");
         }
 
+        private void UpdatePcFoldersIsInSdCard()
+        {
+            var pcItemsSource = PcFoldersWithGdiListView.ItemsSource;
+            if (pcItemsSource == null)
+            {
+                return;
+            }
+
+            foreach (GameOnPc pcViewItem in pcItemsSource)
+            {
+                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName))
+                {
+                    var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName);
+                    pcViewItem.IsInSdCard = "✓";
+                    pcViewItem.SdFolder = gameOnSd.Path;
+                    pcViewItem.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
+                }
+                else
+                {
+                    pcViewItem.IsInSdCard = "Nope";
+                }
+            }
+
+            ICollectionView view = CollectionViewSource.GetDefaultView(pcItemsSource);
+            view.Refresh();
+        }
+
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
             var gamesToRemove = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().Where(g => gamesOnSdCard.Any(sg => sg.GameName == g.GameName));
@@ -168,7 +198,9 @@ namespace GDEmuSdCardManager
             var sdSubFoldersListWithGames = Directory.EnumerateDirectories(SdFolderTextBox.Text).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
-            var gamesToCopy = pcGames.Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName));
+            var gamesToCopy = pcGames
+                .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName)
+                || (si.MustShrink && si.FormattedSize == si.SdFormattedSize));
 
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
@@ -184,28 +216,64 @@ namespace GDEmuSdCardManager
             {
                 WriteInfo($"Copying {selectedItem.GameName}...");
                 string availableFolder = string.Empty;
-                do
-                {
-                    string format = index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
-                    string formattedIndex = index.ToString(format);
-                    if (!sdSubFoldersListWithGames.Any(f => System.IO.Path.GetFileName(f) == formattedIndex))
-                    {
-                        availableFolder = formattedIndex;
-                    }
 
-                    index++;
-                    if(index == 10000)
+                if(!string.IsNullOrEmpty(selectedItem.SdFolder))
+                {
+                    availableFolder = selectedItem.SdFolder;
+                }
+                else
+                {
+                    do
                     {
-                        WriteError($"You cannot have more than 9999 games on your SD card.");                        
-                        noAvailableFolder = true;
-                        break;
-                    }
-                } while (string.IsNullOrEmpty(availableFolder));
+                        string format = index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+                        string formattedIndex = index.ToString(format);
+                        if (!sdSubFoldersListWithGames.Any(f => System.IO.Path.GetFileName(f) == formattedIndex))
+                        {
+                            availableFolder = formattedIndex;
+                        }
+
+                        index++;
+                        if (index == 10000)
+                        {
+                            WriteError($"You cannot have more than 9999 games on your SD card.");
+                            noAvailableFolder = true;
+                            break;
+                        }
+                    } while (string.IsNullOrEmpty(availableFolder));
+                }
 
                 if(noAvailableFolder == false)
                 {
                     string newPath = System.IO.Path.GetFullPath(SdFolderTextBox.Text + @"\" + availableFolder);
-                    await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
+
+                    if(selectedItem.MustShrink)
+                    {
+                        string tempPath = @".\Extract Re-Build GDI's\temp_game_copy";
+                        Directory.CreateDirectory(tempPath);
+                        FileManager.RemoveAllFilesInDirectory(tempPath);
+                        await FileManager.CopyDirectoryContentToAnother(
+                            selectedItem.FullPath,
+                            tempPath);
+                        var commandResult = await Command
+                            .Run(@".\Extract Re-Build GDI's\Extract GDI Image.bat", tempPath)
+                            .Task;
+                        var commandResult2 = await Command
+                            .Run(@".\Extract Re-Build GDI's\Build Truncated GDI Image.bat", tempPath + " Extracted")
+                            .Task;
+
+                        await FileManager.CopyDirectoryContentToAnother(
+                            tempPath,
+                            newPath);
+
+                        Directory.Delete(tempPath, true);
+
+                        Directory.Delete(tempPath + " Extracted", true);
+                    }
+                    else
+                    {
+                        await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
+                    }
+
                     CopyProgressBar.Value++;
                     WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
                 }
@@ -223,31 +291,6 @@ namespace GDEmuSdCardManager
                 WriteSuccess($"Games copied");
             }
             LoadAllButton_Click(null, null);
-        }
-
-        private void UpdatePcFoldersIsInSdCard()
-        {
-            var pcItemsSource = PcFoldersWithGdiListView.ItemsSource;
-            if (pcItemsSource == null)
-            {
-                return;
-            }
-
-            foreach (GameOnPc pcViewItem in pcItemsSource)
-            {
-                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName))
-                {
-                    pcViewItem.IsInSdCard = "✓";
-                    pcViewItem.SdFolder = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName).Path;
-                }
-                else
-                {
-                    pcViewItem.IsInSdCard = "Nope";
-                }
-            }
-
-            ICollectionView view = CollectionViewSource.GetDefaultView(pcItemsSource);
-            view.Refresh();
         }
 
         private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)

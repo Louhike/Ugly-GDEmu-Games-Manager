@@ -6,12 +6,14 @@
         xmlns:local="clr-namespace:GDEmuSdCardManager"
         mc:Ignorable="d"
         WindowStyle="SingleBorderWindow"
-        Title="Ugly GDEmu Browser" Height="450" Width="943" MinWidth="750">
+        Title="Ugly GDEmu File Manager" Height="450" Width="943" MinWidth="750">
     <Grid>
         <Grid Background="#FFE5E5E5">
-            <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <Label Content="Games directory" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="98"/>
+            <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>
             <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="57"/>
-            <TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="10,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="436" Height="20"/>
+            <Label Content="SD card root" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="98"/>
+            <TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>
             <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>
             <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
                 <ListView.View>
@@ -21,16 +23,27 @@
                                 Header="Game" Width="150" />
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=Path}" 
-                                Header="Folder" Width="300"/>
+                                Header="Folder" Width="200"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=FormattedSize}" 
-                                Header="Size" Width="75"/>
+                                Header="Size on PC" Width="75"/>
+                        <GridViewColumn DisplayMemberBinding=
+                                "{Binding Path=SdFormattedSize}" 
+                                Header="Size on SD" Width="75"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=IsInSdCard}" 
                                 Header="In SD?" Width="50"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=SdFolder}" 
-                                Header="SD folder" Width="70"/>
+                                Header="SD folder" Width="60"/>
+                        <GridViewColumn
+                                Header="Shrink?" Width="50">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}"/>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>

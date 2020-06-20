@@ -60,6 +60,10 @@ namespace GDEmuSdCardManager.BLL
             {
                 Directory.CreateDirectory(toDirectory);
             }
+            else
+            {
+                RemoveAllFilesInDirectory(toDirectory);
+            }
 
             foreach (var fileToCopy in Directory.EnumerateFiles(fromDirectory))
             {

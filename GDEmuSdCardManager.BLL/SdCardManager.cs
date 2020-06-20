@@ -38,7 +38,7 @@ namespace GDEmuSdCardManager.BLL
                     string gameName = "Unknown name";
                     // Reading the game name
                     byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Trim();
+                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
 
                     gamesOnSdCard.Add(new GameOnSd
                     {
@@ -62,7 +62,6 @@ namespace GDEmuSdCardManager.BLL
 
         public void RemoveGames()
         {
-
         }
     }
 }

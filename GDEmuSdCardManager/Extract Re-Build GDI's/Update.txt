@@ -1,0 +1,15 @@
+[Updates 1.2]
+
+1) Added two new batches to truncate & pad images.
+
+[Updates 1.1]
+
+1) Changed ASCII Splash screen, to use - instead of Ä.
+
+2) Made the Extract batch create the extracted folder & then extract the IP.BIN along with the rest of the files.
+(a one liner)
+
+3) Changed the batches to use %~NX1 so folders with "." will be handled correctly.
+(None of my games folder have "." as there all named after each game name)
+
+4) Other minor changes, code revisions.
