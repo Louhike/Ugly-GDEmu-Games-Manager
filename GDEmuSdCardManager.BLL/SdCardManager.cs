@@ -36,17 +36,12 @@ namespace GDEmuSdCardManager.BLL
                 var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
                 if (gdiFile != null)
                 {
-                    var bin1File = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetFileName(f) == "track01.bin");
-                    string gameName = "Unknown name";
-                    // Reading the game name
-                    byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
+                    string gameName = GameManager.GetName(subFolder, gdiFile);
 
                     gamesOnSdCard.Add(new GameOnSd
                     {
                         GameName = gameName,
                         FullPath = subFolder,
-                        //GdiName = Path.GetFileName(gdiFile),
                         Path = Path.GetFileName(subFolder),
                         FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
                     });
@@ -68,9 +63,9 @@ namespace GDEmuSdCardManager.BLL
 
             do
             {
-                string format = index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+                string format = GetGdemuFolderNameFromIndex(index);
                 string formattedIndex = index.ToString(format);
-                if (!sdSubFoldersListWithGames.Any(f => System.IO.Path.GetFileName(f) == formattedIndex))
+                if (!sdSubFoldersListWithGames.Any(f => Path.GetFileName(f) == formattedIndex))
                 {
                     return index;
                 }
@@ -83,8 +78,8 @@ namespace GDEmuSdCardManager.BLL
 
         public async Task AddGame(string gamePath, short destinationFolderIndex, bool mustShrink)
         {
-            string format = destinationFolderIndex < 100 ? "D2" : destinationFolderIndex < 1000 ? "D3" : "D4";
-            string destinationFolder = System.IO.Path.GetFullPath(DrivePath + @"\" + destinationFolderIndex.ToString(format));
+            string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
+            string destinationFolder = Path.GetFullPath(DrivePath + @"\" + destinationFolderIndex.ToString(format));
 
             if (mustShrink)
             {
@@ -97,9 +92,18 @@ namespace GDEmuSdCardManager.BLL
                 var commandResult = await Command
                     .Run(@".\Extract Re-Build GDI's\Extract GDI Image.bat", tempPath)
                     .Task;
+                if(!commandResult.Success)
+                {
+                    throw new System.Exception("There was an error while extracting the GDI: " + commandResult.StandardError);
+                }
+
                 var commandResult2 = await Command
                     .Run(@".\Extract Re-Build GDI's\Build Truncated GDI Image.bat", tempPath + " Extracted")
                     .Task;
+                if (!commandResult2.Success)
+                {
+                    throw new System.Exception("There was an error while extracting the GDI: " + commandResult2.StandardError);
+                }
 
                 await FileManager.CopyDirectoryContentToAnother(
                     tempPath,
@@ -113,6 +117,11 @@ namespace GDEmuSdCardManager.BLL
             {
                 await FileManager.CopyDirectoryContentToAnother(gamePath, destinationFolder);
             }
+        }
+
+        private string GetGdemuFolderNameFromIndex(short index)
+        {
+            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
         }
     }
 }

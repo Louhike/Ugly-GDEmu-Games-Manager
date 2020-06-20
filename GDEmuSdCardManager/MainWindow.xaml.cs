@@ -19,9 +19,9 @@ namespace GDEmuSdCardManager
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static string CopyGamesButtonTextWhileActive = "Copy selected games to SD";
-        private static string CopyGamesButtonTextWhileCopying = "Copying files...";
-        private static string ConfigurationPath = @".\config.json";
+        private static readonly string CopyGamesButtonTextWhileActive = "Copy selected games to SD";
+        private static readonly string CopyGamesButtonTextWhileCopying = "Copying files...";
+        private static readonly string ConfigurationPath = @".\config.json";
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
 
@@ -49,7 +49,7 @@ namespace GDEmuSdCardManager
 
         private void LoadDefaultPaths()
         {
-            var config = UGDEBConfiguration.LoadConfiguration(ConfigurationPath);
+            var config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
             PcFolderTextBox.Text = config.PcDefaultPath;
             SdFolderTextBox.Text = config.SdDefaultDrive;
         }
@@ -68,7 +68,7 @@ namespace GDEmuSdCardManager
             SdFolderTextBox.Text = browserDialog.SelectedPath;
         }
 
-        private async void LoadAllButton_Click(object sender, RoutedEventArgs e)
+        private void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
             IsScanSuccessful = true;
             LoadGamesOnPc();
@@ -93,22 +93,25 @@ namespace GDEmuSdCardManager
 
             foreach (var subFolder in subFoldersList)
             {
-                var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                if (Directory
+                    .EnumerateFiles(subFolder)
+                    .Count(f => System.IO.Path.GetExtension(f) == ".gdi") > 1)
+                {
+                    WriteError($"You have more than one GDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
+                    continue;
+                }
+
+                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
 
                 if (gdiFile != null)
                 {
-                    var bin1File = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetFileName(f) == "track01.bin");
-                    string gameName = "Unknown name";
-                    // Reading the game name
-                    byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
+                    string gameName = GameManager.GetName(subFolder, gdiFile);
 
                     subFoldersWithGdiList.Add(new GameOnPc
                     {
                         FullPath = subFolder,
                         GameName = gameName,
-                        //GdiName = System.IO.Path.GetFileName(gdiFile),
-                        Path = System.IO.Path.GetFileName(subFolder),
+                        Path = Path.GetFileName(subFolder),
                         FormattedSize = FileManager.GetDirectoryFormattedSize(subFolder)
                     });
                 }
@@ -164,7 +167,7 @@ namespace GDEmuSdCardManager
                 }
                 else
                 {
-                    pcViewItem.IsInSdCard = "Nope";
+                    pcViewItem.IsInSdCard = "🚫";
                 }
             }
 
@@ -212,7 +215,6 @@ namespace GDEmuSdCardManager
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
                 WriteInfo($"Copying {selectedItem.GameName}...");
-                string availableFolder = string.Empty;
 
                 if (!string.IsNullOrEmpty(selectedItem.SdFolder))
                 {
@@ -228,10 +230,16 @@ namespace GDEmuSdCardManager
                     }
                 }
 
-                await sdCardManager.AddGame(selectedItem.FullPath, index, selectedItem.MustShrink);
-
-                CopyProgressBar.Value++;
-                WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
+                try
+                {
+                    await sdCardManager.AddGame(selectedItem.FullPath, index, selectedItem.MustShrink);
+                    CopyProgressBar.Value++;
+                    WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
+                }
+                catch (Exception error)
+                {
+                    WriteError(error.Message);
+                }
             }
 
             CopyGamesToSdButton.IsEnabled = true;
@@ -250,7 +258,7 @@ namespace GDEmuSdCardManager
 
         private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
         {
-            var config = new UGDEBConfiguration()
+            var config = new UgdegmConfiguration()
             {
                 PcDefaultPath = PcFolderTextBox.Text,
                 SdDefaultDrive = SdFolderTextBox.Text
@@ -281,8 +289,10 @@ namespace GDEmuSdCardManager
 
         private void WriteMessageInRichTextBox(string message, SolidColorBrush color)
         {
-            var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
-            error.Foreground = color;
+            var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message))
+            {
+                Foreground = color
+            };
             InfoRichTextBox.Document.Blocks.Add(error);
             InfoRichTextBox.ScrollToEnd();
         }

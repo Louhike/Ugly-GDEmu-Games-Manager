@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
 namespace GDEmuSdCardManager
@@ -7,7 +6,7 @@ namespace GDEmuSdCardManager
     /// <summary>
     /// Project configuration loaded from JSON
     /// </summary>
-    public class UGDEBConfiguration
+    public class UgdegmConfiguration
     {
         public string PcDefaultPath { get; set; } = "F:\\Roms\\Sega - Dreamcast";
         public string SdDefaultDrive { get; set; } = "H:\\";
@@ -17,23 +16,22 @@ namespace GDEmuSdCardManager
         /// </summary>
         /// <param name="jsonFilePath"></param>
         /// <returns></returns>
-        public static UGDEBConfiguration LoadConfiguration(string jsonFilePath)
+        public static UgdegmConfiguration LoadConfiguration(string jsonFilePath)
         {
             if (File.Exists(jsonFilePath))
             {
                 try
                 {
-                    return JsonSerializer.Deserialize<UGDEBConfiguration>(File.ReadAllText(jsonFilePath));
-
+                    return JsonSerializer.Deserialize<UgdegmConfiguration>(File.ReadAllText(jsonFilePath));
                 }
                 catch
                 {
-                    return new UGDEBConfiguration();
+                    return new UgdegmConfiguration();
                 }
             }
             else
             {
-                return new UGDEBConfiguration();
+                return new UgdegmConfiguration();
             }
         }
 
@@ -48,7 +46,7 @@ namespace GDEmuSdCardManager
                 File.Create(jsonFilePath).Close();
             }
 
-            File.WriteAllText(jsonFilePath, JsonSerializer.Serialize<UGDEBConfiguration>(this));
+            File.WriteAllText(jsonFilePath, JsonSerializer.Serialize<UgdegmConfiguration>(this));
         }
     }
 }
