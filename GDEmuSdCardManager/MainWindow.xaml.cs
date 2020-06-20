@@ -32,11 +32,14 @@ namespace GDEmuSdCardManager
             InitializeComponent();
             LoadDefaultPaths();
             gamesOnSdCard = new List<GameOnSd>();
-            PcFolderTextBox.TextChanged += OnFolderChanged;
-            SdFolderTextBox.TextChanged += OnFolderChanged;
+            DriveInfo[] allDrives = DriveInfo.GetDrives();
+            SdFolderComboBox.ItemsSource = allDrives.Select(d => d.Name);
+            PcFolderTextBox.TextChanged += OnFolderOrDriveChanged;
+            SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
+            SdFolderComboBox.SelectionChanged += OnDriveChanged;
         }
 
-        private void OnFolderChanged(object sender, TextChangedEventArgs e)
+        private void OnFolderOrDriveChanged(object sender, RoutedEventArgs e)
         {
             if (!HavePathsChangedSinceLastScanSuccessful)
             {
@@ -47,11 +50,35 @@ namespace GDEmuSdCardManager
             }
         }
 
+        private void OnDriveChanged(object sender, RoutedEventArgs e)
+        {
+            CheckSdCardIsMountedAndInFat32();
+        }
+
+        private bool CheckSdCardIsMountedAndInFat32()
+        {
+            DriveInfo[] allDrives = DriveInfo.GetDrives();
+            var selectedDrive = allDrives.SingleOrDefault(d => d.Name == SdFolderComboBox.SelectedItem as string);
+            if (selectedDrive == null)
+            {
+                WriteError("The drive you selected for the SD card does not seem to be mounted");
+                return false; ;
+            }
+
+            if (selectedDrive.DriveFormat != "FAT32")
+            {
+                WriteError("The SD card must be formatted on FAT32");
+                return false; ;
+            }
+
+            return true; ;
+        }
+
         private void LoadDefaultPaths()
         {
             var config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
             PcFolderTextBox.Text = config.PcDefaultPath;
-            SdFolderTextBox.Text = config.SdDefaultDrive;
+            SdFolderComboBox.SelectedItem = config.SdDefaultDrive;
         }
 
         private void PcBrowseButton_Click(object sender, RoutedEventArgs e)
@@ -59,13 +86,6 @@ namespace GDEmuSdCardManager
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
             PcFolderTextBox.Text = browserDialog.SelectedPath;
-        }
-
-        private void SdBrowseButton_Click(object sender, RoutedEventArgs e)
-        {
-            var browserDialog = new VistaFolderBrowserDialog();
-            browserDialog.ShowDialog();
-            SdFolderTextBox.Text = browserDialog.SelectedPath;
         }
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
@@ -123,17 +143,22 @@ namespace GDEmuSdCardManager
 
         private void LoadGamesOnSd()
         {
-            var sdCardManager = new SdCardManager(SdFolderTextBox.Text);
+            if(!CheckSdCardIsMountedAndInFat32())
+            {
+                return;
+            }
+
+            var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
             try
             {
                 gamesOnSdCard = sdCardManager.GetGames();
-                SdFolderTextBox.BorderBrush = Brushes.LightGray;
+                SdFolderComboBox.BorderBrush = Brushes.LightGray;
             }
             catch (FileNotFoundException e)
             {
                 WriteError(e.Message);
                 IsScanSuccessful = false;
-                SdFolderTextBox.BorderBrush = Brushes.Red;
+                SdFolderComboBox.BorderBrush = Brushes.Red;
                 gamesOnSdCard = new List<GameOnSd>();
                 return;
             }
@@ -195,7 +220,7 @@ namespace GDEmuSdCardManager
         {
             CopyGamesToSdButton.IsEnabled = false;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileCopying;
-            var sdCardManager = new SdCardManager(SdFolderTextBox.Text);
+            var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
             var gamesToCopy = pcGames
@@ -261,7 +286,7 @@ namespace GDEmuSdCardManager
             var config = new UgdegmConfiguration()
             {
                 PcDefaultPath = PcFolderTextBox.Text,
-                SdDefaultDrive = SdFolderTextBox.Text
+                SdDefaultDrive = SdFolderComboBox.SelectedItem as string
             };
 
             config.Save(ConfigurationPath);

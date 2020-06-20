@@ -13,8 +13,9 @@
             <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>
             <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="57"/>
             <Label Content="SD card root" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="98"/>
-            <TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>
-            <Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>
+            <ComboBox x:Name="SdFolderComboBox" HorizontalAlignment="Left" Margin="113,37,0,0" VerticalAlignment="Top" Width="120"/>
+            <!--<TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>-->
+            <!--<Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>-->
             <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
                 <ListView.View>
                     <GridView>
@@ -69,6 +70,7 @@
             </Button>
             <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" HorizontalAlignment="Left" Height="25" Margin="736,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
             <TextBox HorizontalAlignment="Left" FontSize="9" IsReadOnly="True" Margin="734,35,0,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" Width="201"/>
+            
 
         </Grid>
     </Grid>

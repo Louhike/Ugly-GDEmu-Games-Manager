@@ -9,17 +9,32 @@ namespace GDEmuSdCardManager.BLL
         public static string GetName(string folderPath, string gdiPath)
         {
             string gameName;
-            var bin1File = Directory.EnumerateFiles(folderPath).SingleOrDefault(f => Path.GetFileName(f) == "track01.bin");
-            if (bin1File == null)
+            string gdiFileName = Path.GetFileNameWithoutExtension(gdiPath);
+            try
             {
-                // using the GDI file name as game name
-                gameName = Path.GetFileNameWithoutExtension(gdiPath);
+                var bin1File = Directory
+                    .EnumerateFiles(folderPath)
+                    .SingleOrDefault(f => Path.GetFileName(f) == "track01.bin" || Path.GetFileName(f) == "track01.iso");
+                if (bin1File == null)
+                {
+                    // using the GDI file name as game name
+                    gameName = gdiFileName;
+                }
+                else
+                {
+                    // Reading the game name from track01.bin
+                    byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
+                    gameName = Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
+                    if (string.IsNullOrEmpty(gameName))
+                    {
+                        gameName = gdiFileName;
+                    }
+                }
             }
-            else
+            catch
             {
-                // Reading the game name from track01.bin
-                byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                gameName = Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
+                // If anything fails, we just the name of the GDI
+                gameName = gdiFileName;
             }
 
             return gameName;

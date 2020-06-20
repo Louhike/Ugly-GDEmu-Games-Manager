@@ -79,7 +79,7 @@ namespace GDEmuSdCardManager.BLL
         public async Task AddGame(string gamePath, short destinationFolderIndex, bool mustShrink)
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
-            string destinationFolder = Path.GetFullPath(DrivePath + @"\" + destinationFolderIndex.ToString(format));
+            string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
 
             if (mustShrink)
             {
@@ -94,7 +94,8 @@ namespace GDEmuSdCardManager.BLL
                     .Task;
                 if(!commandResult.Success)
                 {
-                    throw new System.Exception("There was an error while extracting the GDI: " + commandResult.StandardError);
+                    // There is always an error even if it's working, find out why (or use the new gditools)
+                    //throw new System.Exception("There was an error while extracting the GDI: " + commandResult.StandardError);
                 }
 
                 var commandResult2 = await Command
@@ -102,7 +103,7 @@ namespace GDEmuSdCardManager.BLL
                     .Task;
                 if (!commandResult2.Success)
                 {
-                    throw new System.Exception("There was an error while extracting the GDI: " + commandResult2.StandardError);
+                    //throw new System.Exception("There was an error while extracting the GDI: " + commandResult2.StandardError);
                 }
 
                 await FileManager.CopyDirectoryContentToAnother(

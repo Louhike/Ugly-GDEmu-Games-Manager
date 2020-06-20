@@ -10,7 +10,7 @@ namespace GDEmuSdCardManager.BLL
 
         public static long GetDirectorySize(string dirPath)
         {
-            if (!Directory.Exists(dirPath))
+            if (Directory.Exists(dirPath) == false)
             {
                 return 0;
             }
