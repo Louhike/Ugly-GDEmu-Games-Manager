@@ -59,10 +59,10 @@ namespace GDEmuSdCardManager
         {
             DriveInfo[] allDrives = DriveInfo.GetDrives();
             var selectedDrive = allDrives.SingleOrDefault(d => d.Name == SdFolderComboBox.SelectedItem as string);
-            if (selectedDrive == null)
+            if (selectedDrive == null || !selectedDrive.IsReady)
             {
                 WriteError("The drive you selected for the SD card does not seem to be mounted");
-                return false; ;
+                return false;
             }
 
             if (selectedDrive.DriveFormat != "FAT32")
