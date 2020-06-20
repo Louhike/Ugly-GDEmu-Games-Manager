@@ -200,7 +200,7 @@ namespace GDEmuSdCardManager
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
             var gamesToCopy = pcGames
                 .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName)
-                || (si.FormattedSize == si.SdFormattedSize));
+                || (si.FormattedSize != si.SdFormattedSize));
 
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
