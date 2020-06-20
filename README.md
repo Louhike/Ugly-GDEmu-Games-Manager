@@ -12,12 +12,17 @@ It allows you to:
 
 It also shows the free space on your SD card and the size of your games.
 
+WARNING: EDIT: The tool does not work well with the SD Card Maker of MadSheep for the time being. I will fix that in the future release. For the time being, use just one of them, not both at the same time.
+
 ## Roadmap
-1. Copy files from SD to PC.
-2. Increment the progress bar more gradually.
+1. Improve how the name of the game is retrieve.
+2. Make tool compatible with Mad Sheep SD Card Maker
+3. Sort games alphabetically in the SD card
+4. Copy files from SD to PC.
+5. Increment the progress bar more gradually.
 
 ## Technical roadmap
-1. Move all file manipulation code to BLL project.
+TODO
 
 ## Would be nice to have
 
