@@ -31,5 +31,8 @@ The software is using the following tools made by others:
 
 Without them, this software would not exist so THANKS.
 
+## License
+GNU General Public License v2.0
+
 ## If you want to support the developper
 _I don't need it_ but if you would like to help pay my coffee/beer while I'm working on this, you can donate here: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GU9TN9WV3PMHA&currency_code=EUR&source=url)
