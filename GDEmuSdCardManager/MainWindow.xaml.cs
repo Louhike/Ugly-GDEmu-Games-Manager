@@ -1,14 +1,11 @@
 ﻿using GDEmuSdCardManager.BLL;
 using GDEmuSdCardManager.DTO;
-using Medallion.Shell;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Security.AccessControl;
-using System.Security.Principal;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -41,7 +38,7 @@ namespace GDEmuSdCardManager
 
         private void OnFolderChanged(object sender, TextChangedEventArgs e)
         {
-            if(!HavePathsChangedSinceLastScanSuccessful)
+            if (!HavePathsChangedSinceLastScanSuccessful)
             {
                 CopyGamesToSdButton.IsEnabled = false;
                 RemoveSelectedGamesButton.IsEnabled = false;
@@ -104,7 +101,7 @@ namespace GDEmuSdCardManager
                     string gameName = "Unknown name";
                     // Reading the game name
                     byte[] buffer = File.ReadAllBytes(bin1File).Skip(144).Take(140).ToArray();
-                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0',' ').Trim();
+                    gameName = System.Text.Encoding.UTF8.GetString(buffer).Replace('\0', ' ').Trim();
 
                     subFoldersWithGdiList.Add(new GameOnPc
                     {
@@ -129,7 +126,7 @@ namespace GDEmuSdCardManager
                 gamesOnSdCard = sdCardManager.GetGames();
                 SdFolderTextBox.BorderBrush = Brushes.LightGray;
             }
-            catch(FileNotFoundException e)
+            catch (FileNotFoundException e)
             {
                 WriteError(e.Message);
                 IsScanSuccessful = false;
@@ -195,12 +192,13 @@ namespace GDEmuSdCardManager
         {
             CopyGamesToSdButton.IsEnabled = false;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileCopying;
-            var sdSubFoldersListWithGames = Directory.EnumerateDirectories(SdFolderTextBox.Text).Where(f => Directory.EnumerateFiles(f).Any(f => System.IO.Path.GetExtension(f) == ".gdi"));
+            var sdCardManager = new SdCardManager(SdFolderTextBox.Text);
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
             var gamesToCopy = pcGames
                 .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName)
-                || (si.FormattedSize != si.SdFormattedSize));
+                || (si.FormattedSize != si.SdFormattedSize)
+                || si.MustShrink);
 
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
@@ -211,78 +209,35 @@ namespace GDEmuSdCardManager
 
             short index = 2;
 
-            bool noAvailableFolder = false;
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
                 WriteInfo($"Copying {selectedItem.GameName}...");
                 string availableFolder = string.Empty;
 
-                if(!string.IsNullOrEmpty(selectedItem.SdFolder))
+                if (!string.IsNullOrEmpty(selectedItem.SdFolder))
                 {
-                    availableFolder = selectedItem.SdFolder;
+                    index = short.Parse(selectedItem.SdFolder);
                 }
                 else
                 {
-                    do
+                    index = sdCardManager.FindAvailableFolderForGame(index);
+                    if (index == -1)
                     {
-                        string format = index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
-                        string formattedIndex = index.ToString(format);
-                        if (!sdSubFoldersListWithGames.Any(f => System.IO.Path.GetFileName(f) == formattedIndex))
-                        {
-                            availableFolder = formattedIndex;
-                        }
-
-                        index++;
-                        if (index == 10000)
-                        {
-                            WriteError($"You cannot have more than 9999 games on your SD card.");
-                            noAvailableFolder = true;
-                            break;
-                        }
-                    } while (string.IsNullOrEmpty(availableFolder));
+                        WriteError($"You cannot have more than 9999 games on your SD card.");
+                        break;
+                    }
                 }
 
-                if(noAvailableFolder == false)
-                {
-                    string newPath = System.IO.Path.GetFullPath(SdFolderTextBox.Text + @"\" + availableFolder);
+                await sdCardManager.AddGame(selectedItem.FullPath, index, selectedItem.MustShrink);
 
-                    if(selectedItem.MustShrink)
-                    {
-                        string tempPath = @".\Extract Re-Build GDI's\temp_game_copy";
-                        Directory.CreateDirectory(tempPath);
-                        FileManager.RemoveAllFilesInDirectory(tempPath);
-                        await FileManager.CopyDirectoryContentToAnother(
-                            selectedItem.FullPath,
-                            tempPath);
-                        var commandResult = await Command
-                            .Run(@".\Extract Re-Build GDI's\Extract GDI Image.bat", tempPath)
-                            .Task;
-                        var commandResult2 = await Command
-                            .Run(@".\Extract Re-Build GDI's\Build Truncated GDI Image.bat", tempPath + " Extracted")
-                            .Task;
-
-                        await FileManager.CopyDirectoryContentToAnother(
-                            tempPath,
-                            newPath);
-
-                        Directory.Delete(tempPath, true);
-
-                        Directory.Delete(tempPath + " Extracted", true);
-                    }
-                    else
-                    {
-                        await FileManager.CopyDirectoryContentToAnother(selectedItem.FullPath, newPath);
-                    }
-
-                    CopyProgressBar.Value++;
-                    WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
-                }
+                CopyProgressBar.Value++;
+                WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
             }
 
             CopyGamesToSdButton.IsEnabled = true;
             CopyGamesToSdButton.Content = CopyGamesButtonTextWhileActive;
 
-            if(noAvailableFolder)
+            if (CopyProgressBar.Value < gamesToCopy.Count())
             {
                 WriteInfo($"There was an error. {CopyProgressBar.Value} games were copied.");
             }
@@ -311,24 +266,23 @@ namespace GDEmuSdCardManager
 
         private void WriteError(string message)
         {
-            var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
-            error.Foreground = Brushes.Red;
-            InfoRichTextBox.Document.Blocks.Add(error);
-            InfoRichTextBox.ScrollToEnd();
+            WriteMessageInRichTextBox(message, Brushes.Red);
         }
 
         private void WriteInfo(string message)
         {
-            var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
-            error.Foreground = Brushes.Black;
-            InfoRichTextBox.Document.Blocks.Add(error);
-            InfoRichTextBox.ScrollToEnd();
+            WriteMessageInRichTextBox(message, Brushes.Black);
         }
 
         private void WriteSuccess(string message)
         {
+            WriteMessageInRichTextBox(message, Brushes.Blue);
+        }
+
+        private void WriteMessageInRichTextBox(string message, SolidColorBrush color)
+        {
             var error = new Paragraph(new Run(DateTime.Now.ToString("HH:mm:ss") + ": " + message));
-            error.Foreground = Brushes.Blue;
+            error.Foreground = color;
             InfoRichTextBox.Document.Blocks.Add(error);
             InfoRichTextBox.ScrollToEnd();
         }

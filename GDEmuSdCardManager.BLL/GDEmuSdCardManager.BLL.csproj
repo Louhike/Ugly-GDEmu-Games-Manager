@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MedallionShell" Version="1.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\GDEmuSdCardManager.DTO\GDEmuSdCardManager.DTO.csproj" />
   </ItemGroup>
 
