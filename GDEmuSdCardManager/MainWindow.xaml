@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:GDEmuSdCardManager"
         mc:Ignorable="d"
         WindowStyle="SingleBorderWindow"
-        Title="Ugly GDEmu File Manager" Height="450" Width="1020" MinWidth="750">
+        Title="UGGM - Ugly GDEmu Games Manager" Height="450" Width="1020" MinWidth="950">
     <Grid>
         <Grid Background="#FFE5E5E5">
             <Label Content="Games directory" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="98"/>
@@ -71,9 +71,9 @@
                     <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">paths</TextBlock>
                 </StackPanel>
             </Button>
-            <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" HorizontalAlignment="Left" Height="25" Margin="736,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
-            <TextBox HorizontalAlignment="Left" FontSize="9" IsReadOnly="True" Margin="734,35,0,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" Width="201"/>
-            
+            <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" Height="25" Margin="0,12,11,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
+            <TextBox FontSize="9" IsReadOnly="True" Margin="0,37,9,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="201"/>
+
 
         </Grid>
     </Grid>
