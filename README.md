@@ -32,7 +32,7 @@ The software is using the following tools made by others:
 
 Without them, this software would not exist so THANKS.
 
-Thanks to Fed (https://github.com/PapiFed) for helping testing the software and his nice recommandations!
+Thanks to Fed (https://github.com/PapiFed) for helping testing the software and for his nice recommandations!
 
 ## License
 GNU General Public License v2.0
