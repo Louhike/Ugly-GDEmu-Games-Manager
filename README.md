@@ -12,15 +12,13 @@ It allows you to:
 
 It also shows the free space on your SD card and the size of your games.
 
-## Roadmap
-1. Sort games alphabetically in the SD card
-2. Copy games from SD to PC.
-3. Increment the progress bar more gradually.
+## What will change in future version 0.6.0
+* Files with stranges track names will work and be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
+* Warning if a new version of UGGM is available.
+* Use checkboxes instead of line selection to choose which games to copy/remove.
+* Better performance for shrinking.
 
-## Technical roadmap
-1. Use the last version of gditools with IronPython to shrink the games.
-
-## Would be nice to have
+## Future
 
 * Automatically add covers if missing from https://archive.org/details/670dreamcastgamesjewelcoverpicturesconvertedto256x256.pvrfilesforgdemu.7z
 
