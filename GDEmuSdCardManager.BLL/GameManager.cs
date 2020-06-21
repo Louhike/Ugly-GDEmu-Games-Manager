@@ -45,7 +45,7 @@ namespace GDEmuSdCardManager.BLL
                 GameName = game.GameName,
                 Hwid = game.Hwid,
                 Maker = game.Maker,
-                Path = game.FullPath,
+                Path = game.Path,
                 Perif = game.Perif,
                 Producer = game.Producer,
                 ProductN = game.ProductN,
@@ -60,7 +60,7 @@ namespace GDEmuSdCardManager.BLL
             var game = new BaseGame
             {
                 FullPath = folderPath,
-                Path = Path.GetDirectoryName(folderPath),
+                Path = folderPath.Split(Path.DirectorySeparatorChar).Last(),
                 FormattedSize = FileManager.GetDirectoryFormattedSize(folderPath)
             };
 
