@@ -239,11 +239,7 @@ namespace GDEmuSdCardManager
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
-            var gamesToCopy = pcGames
-                .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName && f.Disc == si.Disc)
-                || (si.FormattedSize != si.SdFormattedSize)
-                || si.MustShrink);
-
+            var gamesToCopy = pcGames;
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
             CopyProgressLabel.Visibility = Visibility.Visible;
@@ -273,7 +269,7 @@ namespace GDEmuSdCardManager
 
                 try
                 {
-                    await sdCardManager.AddGame(selectedItem.FullPath, index, selectedItem.MustShrink);
+                    await sdCardManager.AddGame(selectedItem, index);
                     CopyProgressBar.Value++;
                     WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
                 }
