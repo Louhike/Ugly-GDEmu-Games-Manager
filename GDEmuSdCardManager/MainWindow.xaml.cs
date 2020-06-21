@@ -68,10 +68,10 @@ namespace GDEmuSdCardManager
             if (selectedDrive.DriveFormat != "FAT32")
             {
                 WriteError("The SD card must be formatted on FAT32");
-                return false; ;
+                return false;
             }
 
-            return true; ;
+            return true;
         }
 
         private void LoadDefaultPaths()
@@ -195,9 +195,9 @@ namespace GDEmuSdCardManager
 
             foreach (GameOnPc pcViewItem in pcItemsSource)
             {
-                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName))
+                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc))
                 {
-                    var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName);
+                    var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc);
                     pcViewItem.IsInSdCard = "✓";
                     pcViewItem.SdFolder = gameOnSd.Path;
                     pcViewItem.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
@@ -214,12 +214,16 @@ namespace GDEmuSdCardManager
 
         private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
         {
-            var gamesToRemove = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().Where(g => gamesOnSdCard.Any(sg => sg.GameName == g.GameName));
+            var gamesToRemove = PcFoldersWithGdiListView
+                .SelectedItems
+                .Cast<GameOnPc>()
+                .Where(g => gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
             WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
             foreach (GameOnPc itemToRemove in gamesToRemove)
             {
-                WriteInfo($"Deleting {itemToRemove.GameName}...");
-                var gameOnSdToRemove = gamesOnSdCard.FirstOrDefault(g => g.GameName == itemToRemove.GameName);
+                WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
+                var gameOnSdToRemove = gamesOnSdCard
+                    .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
 
                 FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
             }
@@ -236,7 +240,7 @@ namespace GDEmuSdCardManager
 
             var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
             var gamesToCopy = pcGames
-                .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName)
+                .Where(si => !gamesOnSdCard.Any(f => f.GameName == si.GameName && f.Disc == si.Disc)
                 || (si.FormattedSize != si.SdFormattedSize)
                 || si.MustShrink);
 
@@ -251,7 +255,7 @@ namespace GDEmuSdCardManager
 
             foreach (GameOnPc selectedItem in gamesToCopy)
             {
-                WriteInfo($"Copying {selectedItem.GameName}...");
+                WriteInfo($"Copying {selectedItem.GameName} {selectedItem.Disc}...");
 
                 if (!string.IsNullOrEmpty(selectedItem.SdFolder))
                 {
