@@ -1,4 +1,5 @@
 ﻿using GDEmuSdCardManager.DTO;
+using GDEmuSdCardManager.DTO.GDI;
 using Medallion.Shell;
 using System;
 using System.Collections.Generic;
@@ -79,12 +80,12 @@ namespace GDEmuSdCardManager.BLL
             return -1;
         }
 
-        public async Task AddGame(string gamePath, short destinationFolderIndex, bool mustShrink)
+        public async Task AddGame(GameOnPc game, short destinationFolderIndex)
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
 
-            if (mustShrink)
+            if (game.MustShrink)
             {
                 string tempPath = @".\Extract Re-Build GDI's\temp_game_copy";
                 Directory.CreateDirectory(tempPath);
@@ -95,7 +96,7 @@ namespace GDEmuSdCardManager.BLL
                 }
 
                 await FileManager.CopyDirectoryContentToAnother(
-                    gamePath,
+                    game.FullPath,
                     tempPath,
                     false);
                 var commandResult = await Command
@@ -115,6 +116,11 @@ namespace GDEmuSdCardManager.BLL
                     //throw new System.Exception("There was an error while extracting the GDI: " + commandResult2.StandardError);
                 }
 
+                var gdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
+                var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                File.Delete(gdiPath);
+                newGdi.SaveTo(Path.Combine(tempPath, "disc.gdi"), true);
+                newGdi.RenameTrackFiles(tempPath);
                 await FileManager.CopyDirectoryContentToAnother(
                     tempPath,
                     destinationFolder,
@@ -126,7 +132,10 @@ namespace GDEmuSdCardManager.BLL
             }
             else
             {
-                await FileManager.CopyDirectoryContentToAnother(gamePath, destinationFolder, true);
+                await FileManager.CopyDirectoryContentToAnother(game.FullPath, destinationFolder, true);
+
+                game.GdiInfo.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                game.GdiInfo.RenameTrackFiles(destinationFolder);
             }
         }
 
