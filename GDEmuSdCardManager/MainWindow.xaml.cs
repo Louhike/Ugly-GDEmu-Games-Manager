@@ -255,7 +255,7 @@ namespace GDEmuSdCardManager
 
                 if (!string.IsNullOrEmpty(selectedItem.SdFolder))
                 {
-                    index = short.Parse(selectedItem.SdFolder);
+                    index = short.Parse(Path.GetFileName(selectedItem.SdFolder));
                 }
                 else
                 {
