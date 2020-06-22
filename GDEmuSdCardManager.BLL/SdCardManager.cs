@@ -87,48 +87,23 @@ namespace GDEmuSdCardManager.BLL
 
             if (game.MustShrink)
             {
-                string tempPath = @".\Extract Re-Build GDI's\temp_game_copy";
-                Directory.CreateDirectory(tempPath);
-                FileManager.RemoveAllFilesInDirectory(tempPath);
-                if(Directory.Exists(tempPath + " Extracted"))
-                {
-                    Directory.Delete(tempPath + " Extracted", true);
-                }
+                FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
 
-                await FileManager.CopyDirectoryContentToAnother(
-                    game.FullPath,
-                    tempPath,
-                    false);
                 var commandResult = await Command
-                    .Run(@".\Extract Re-Build GDI's\Extract GDI Image.bat", tempPath)
+                    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
                     .Task;
-                if(!commandResult.Success)
+                if (!commandResult.Success)
                 {
                     // There is always an error even if it's working, find out why (or use the new gditools)
                     //throw new System.Exception("There was an error while extracting the GDI: " + commandResult.StandardError);
                 }
 
-                var commandResult2 = await Command
-                    .Run(@".\Extract Re-Build GDI's\Build Truncated GDI Image.bat", tempPath + " Extracted")
-                    .Task;
-                if (!commandResult2.Success)
-                {
-                    //throw new System.Exception("There was an error while extracting the GDI: " + commandResult2.StandardError);
-                }
-
-                var gdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
+                var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
                 var newGdi = GameManager.GetGdiFromFile(gdiPath);
                 File.Delete(gdiPath);
-                newGdi.SaveTo(Path.Combine(tempPath, "disc.gdi"), true);
-                newGdi.RenameTrackFiles(tempPath);
-                await FileManager.CopyDirectoryContentToAnother(
-                    tempPath,
-                    destinationFolder,
-                    true);
-
-                Directory.Delete(tempPath, true);
-
-                Directory.Delete(tempPath + " Extracted", true);
+                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                newGdi.RenameTrackFiles(destinationFolder);
             }
             else
             {
