@@ -1,10 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="IronPython" Version="2.7.10" />
     <PackageReference Include="MedallionShell" Version="1.6.1" />
   </ItemGroup>
 
@@ -13,36 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Extract Re-Build GDI%27s\Build GDI Image.bat">
+    <Content Include="gditools\dist\**">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\Build Truncated GDI Image.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\Config.ini">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\Extract GDI Image.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\Pad GDI Image.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\tools\buildgdi.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\tools\DiscUtils.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\tools\gditools.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\tools\python27.dll">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Extract Re-Build GDI%27s\Truncated GDI Image.bat">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
+    </Content>
   </ItemGroup>
-
 </Project>
