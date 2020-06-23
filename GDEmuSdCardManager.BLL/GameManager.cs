@@ -1,9 +1,10 @@
-﻿using GDEmuSdCardManager.DTO;
-using Microsoft.VisualBasic;
+﻿using GDEmuSdCardManager.BLL.Extensions;
+using GDEmuSdCardManager.DTO;
+using GDEmuSdCardManager.DTO.GDI;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace GDEmuSdCardManager.BLL
@@ -21,6 +22,7 @@ namespace GDEmuSdCardManager.BLL
                 FormattedSize = game.FormattedSize,
                 FullPath = game.FullPath,
                 GameName = game.GameName,
+                GdiInfo = game.GdiInfo,
                 Hwid = game.Hwid,
                 Maker = game.Maker,
                 Path = game.Path,
@@ -32,6 +34,7 @@ namespace GDEmuSdCardManager.BLL
                 ReleaseDate = game.ReleaseDate
             };
         }
+
         public static GameOnSd ExtractSdGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
@@ -43,6 +46,7 @@ namespace GDEmuSdCardManager.BLL
                 FormattedSize = game.FormattedSize,
                 FullPath = game.FullPath,
                 GameName = game.GameName,
+                GdiInfo = game.GdiInfo,
                 Hwid = game.Hwid,
                 Maker = game.Maker,
                 Path = game.Path,
@@ -65,26 +69,16 @@ namespace GDEmuSdCardManager.BLL
             };
 
             string gdiPath = Directory.EnumerateFiles(folderPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
-            var gdiContent = File.ReadAllLines(gdiPath).Where(s => !string.IsNullOrEmpty(s));
-
-            var track03lba = int.Parse(gdiContent.ElementAt(3).Split(" ")[1]);
-            if(track03lba != 45000)
+            game.GdiInfo = GetGdiFromFile(gdiPath);
+            var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
+            if (track3.Lba != 45000)
             {
-                throw new System.Exception("Bad track03.bin LBA");
+                throw new Exception("Bad track03.bin LBA");
             }
 
-            bool isRawMode = int.Parse(gdiContent.ElementAt(3).Split(" ")[3]) == 2352; // 2352/RAW mode or 2048
+            bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
 
-            var bin3File = Directory
-                .EnumerateFiles(folderPath)
-                .SingleOrDefault(f => Path.GetFileName(f) == "track03.bin" || Path.GetFileName(f) == "track03.iso");
-            if (bin3File == null)
-            {
-                // using the GDI file name as game name
-                throw new System.Exception("Error while retrieving track03.bin from game at " + folderPath);
-            }
-
-            using (var fs = File.OpenRead(bin3File))
+            using (var fs = File.OpenRead(Path.Combine(folderPath, track3.FileName)))
             {
                 if (isRawMode)
                 {
@@ -143,6 +137,45 @@ namespace GDEmuSdCardManager.BLL
             }
 
             return game;
+        }
+
+        public static Gdi GetGdiFromFile(string path)
+        {
+            var gdiContent = File.ReadAllLines(path)
+                .Where(l => !string.IsNullOrEmpty(l))
+                .Select(l => l.RemoveSpacesInSuccession());
+
+            var gdi = new Gdi();
+
+            int numberOfTracks;
+            if (!int.TryParse(gdiContent.First(), out numberOfTracks))
+            {
+                throw new FormatException("The GDI file should have the number of tracks in its first line.");
+            }
+
+            if (numberOfTracks != (gdiContent.Count() - 1))
+            {
+                throw new FormatException("The number of tracks defined in the GDI file should match the number in the first line.");
+            }
+
+            gdi.NumberOfTracks = numberOfTracks;
+
+            gdi.Tracks = new List<DiscTrack>();
+            foreach (var line in gdiContent.Skip(1))
+            {
+                var lineSplittedBySpace = line.Split(" ");
+                var discTrack = new DiscTrack()
+                {
+                    TrackNumber = uint.Parse(lineSplittedBySpace.First()),
+                    Lba = uint.Parse(lineSplittedBySpace.ElementAt(1)),
+                    TrackType = byte.Parse(lineSplittedBySpace.ElementAt(2)),
+                    SectorSize = int.Parse(lineSplittedBySpace.ElementAt(3)),
+                    FileName = string.Join(" ", lineSplittedBySpace.Skip(4).SkipLast(1)).Replace("\"", string.Empty)
+                };
+                gdi.Tracks.Add(discTrack);
+            }
+
+            return gdi;
         }
     }
 }
