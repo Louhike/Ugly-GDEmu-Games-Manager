@@ -1,4 +1,6 @@
 ﻿{
 	"PcDefaultPath": "F:\\Roms\\Sega - Dreamcast",
-	"SdDefaultDrive": "H:\\"
+	"SdDefaultDrive": "H:\\",
+	"VersionUrl": "https://raw.githubusercontent.com/Louhike/Ugly-GDEmu-Games-Manager/master/VERSION",
+	"ReleasesUrl": "https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases"
 }
