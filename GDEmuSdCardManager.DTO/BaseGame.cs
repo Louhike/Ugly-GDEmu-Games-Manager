@@ -12,6 +12,7 @@ namespace GDEmuSdCardManager.DTO
         public string Maker { get; set; }
         public string Crc { get; set; }
         public string Disc { get; set; }
+        public string FormattedDiscNumber { get { return Disc.Substring(6); } }
         public string Region { get; set; }
         public string Perif { get; set; }
         public string ProductN { get; set; }

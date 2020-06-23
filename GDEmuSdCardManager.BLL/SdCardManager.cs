@@ -87,7 +87,15 @@ namespace GDEmuSdCardManager.BLL
 
             if (game.MustShrink)
             {
-                FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                if(Directory.Exists(destinationFolder))
+                {
+                    FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                }
+                else
+                {
+                    Directory.CreateDirectory(destinationFolder);
+                }
+
                 var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
 
                 var commandResult = await Command

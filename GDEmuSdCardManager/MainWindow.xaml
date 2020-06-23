@@ -17,34 +17,86 @@
             <!--<TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>-->
             <!--<Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>-->
             <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
+                <!--<ListView.Resources>
+                    <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
+                </ListView.Resources>-->
                 <ListView.View>
                     <GridView>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=GameName}" 
-                                Header="Game" Width="150" />
+                                Header="Game" Width="140" />
                         <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=Disc}" 
-                                Header="Disc" Width="80" />
+                                "{Binding Path=FormattedDiscNumber}" 
+                                Header="Disc" Width="30" />
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=Path}" 
                                 Header="Folder" Width="200"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=FormattedSize}" 
-                                Header="Size on PC" Width="75"/>
+                                Header="Size on PC" Width="65"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=SdFormattedSize}" 
-                                Header="Size on SD" Width="75"/>
+                                Header="Size on SD" Width="65"/>
                         <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=IsInSdCard}" 
-                                Header="In SD?" Width="50"/>
+                                "{Binding Path=IsInSdCardString}" 
+                                Header="In SD?" Width="40"/>
                         <GridViewColumn DisplayMemberBinding=
                                 "{Binding Path=SdFolder}" 
-                                Header="SD folder" Width="60"/>
+                                Header="SD folder" Width="55"/>
+                        <GridViewColumn
+                                Header="Copy?" Width="50">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustCopy}" >
+                                        <CheckBox.Style>
+                                            <Style TargetType="CheckBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MustRemove}" Value="True">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
+                        <GridViewColumn
+                                Header="Remove?" Width="55">
+                            <GridViewColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustRemove}">
+                                        <CheckBox.Style>
+                                            <Style TargetType="CheckBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MustCopy}" Value="True">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding IsInSdCard}" Value="False">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+                                </DataTemplate>
+                            </GridViewColumn.CellTemplate>
+                        </GridViewColumn>
                         <GridViewColumn
                                 Header="Shrink?" Width="50">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}"/>
+                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}">
+                                        <CheckBox.Style>
+                                            <Style TargetType="CheckBox">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding MustCopy}" Value="False">
+                                                        <Setter Property="IsEnabled" Value="False"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
@@ -52,8 +104,7 @@
                 </ListView.View>
             </ListView>
             <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
-            <Button x:Name="CopyGamesToSdButton" IsEnabled="False" Content="Copy selected games to SD" HorizontalAlignment="Right" Margin="0,90,7,0" VerticalAlignment="Top" Click="CopySelectedGames" Width="202"/>
-            <Button x:Name="RemoveSelectedGamesButton" IsEnabled="False" Content="Remove selected games from SD" HorizontalAlignment="Right" Margin="0,115,7,0" VerticalAlignment="Top" Click="RemoveSelectedButton_Click" Width="202"/>
+            <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" HorizontalAlignment="Right" Margin="0,90,7,0" VerticalAlignment="Top" Click="ApplySelectedActions" Width="202" Height="30"/>
             <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
             <Label x:Name="SdSpaceLabel" Content="/" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
             <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Hidden" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
