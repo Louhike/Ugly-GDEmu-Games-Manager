@@ -18,7 +18,13 @@ It also shows the free space on your SD card and the size of your games.
 * Use checkboxes instead of line selection to choose which games to copy/remove.
 * Better performance for shrinking.
 
-## Future
+## What MIGHT change in future version 0.7.0
+* Option to sort games alphabetically on SD card.
+* Handle CDI games.
+* Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
+* Game indexing for GDMenu. I'm already preparing this but it will take some time so I'm not sure it will be in 0.7.0 version.
+
+## I'm thinking about it for 0.8.0
 
 * Automatically add covers if missing from https://archive.org/details/670dreamcastgamesjewelcoverpicturesconvertedto256x256.pvrfilesforgdemu.7z
 
