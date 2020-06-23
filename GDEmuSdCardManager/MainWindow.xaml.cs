@@ -4,8 +4,10 @@ using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -19,9 +21,10 @@ namespace GDEmuSdCardManager
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly string CopyGamesButtonTextWhileActive = "Copy selected games to SD";
-        private static readonly string CopyGamesButtonTextWhileCopying = "Copying files...";
+        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Copy selected games to SD";
+        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Copying files...";
         private static readonly string ConfigurationPath = @".\config.json";
+        private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
 
@@ -43,8 +46,7 @@ namespace GDEmuSdCardManager
         {
             if (!HavePathsChangedSinceLastScanSuccessful)
             {
-                CopyGamesToSdButton.IsEnabled = false;
-                RemoveSelectedGamesButton.IsEnabled = false;
+                ApplySelectedActionsButton.IsEnabled = false;
                 HavePathsChangedSinceLastScanSuccessful = true;
                 WriteInfo("You have changed a path. You must rescan the folders");
             }
@@ -94,8 +96,7 @@ namespace GDEmuSdCardManager
             IsScanSuccessful = true;
             LoadGamesOnPc();
             LoadGamesOnSd();
-            CopyGamesToSdButton.IsEnabled = IsScanSuccessful;
-            RemoveSelectedGamesButton.IsEnabled = IsScanSuccessful;
+            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
             HavePathsChangedSinceLastScanSuccessful = false;
         }
 
@@ -147,7 +148,8 @@ namespace GDEmuSdCardManager
 
         private void LoadGamesOnSd()
         {
-            if(!CheckSdCardIsMountedAndInFat32())
+            IsSdCardMounted = CheckSdCardIsMountedAndInFat32();
+            if (!IsSdCardMounted)
             {
                 return;
             }
@@ -198,13 +200,15 @@ namespace GDEmuSdCardManager
                 if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc))
                 {
                     var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc);
-                    pcViewItem.IsInSdCard = "✓";
+                    pcViewItem.IsInSdCard = true;
+                    pcViewItem.IsInSdCardString = "✓";
                     pcViewItem.SdFolder = gameOnSd.Path;
                     pcViewItem.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
                 }
                 else
                 {
-                    pcViewItem.IsInSdCard = "🚫";
+                    pcViewItem.IsInSdCard = false;
+                    pcViewItem.IsInSdCardString = "🚫";
                 }
             }
 
@@ -212,34 +216,19 @@ namespace GDEmuSdCardManager
             view.Refresh();
         }
 
-        private void RemoveSelectedButton_Click(object sender, RoutedEventArgs e)
+        private async void ApplySelectedActions(object sender, RoutedEventArgs e)
         {
-            var gamesToRemove = PcFoldersWithGdiListView
-                .SelectedItems
-                .Cast<GameOnPc>()
-                .Where(g => gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
-            WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
-            foreach (GameOnPc itemToRemove in gamesToRemove)
-            {
-                WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
-                var gameOnSdToRemove = gamesOnSdCard
-                    .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
-
-                FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
-            }
-
-            WriteSuccess($"Games deleted");
-            LoadAllButton_Click(null, null);
+            await CopySelectedGames();
+            RemoveSelectedGames();
         }
 
-        private async void CopySelectedGames(object sender, RoutedEventArgs e)
+        private async Task CopySelectedGames()
         {
-            CopyGamesToSdButton.IsEnabled = false;
-            CopyGamesToSdButton.Content = CopyGamesButtonTextWhileCopying;
+            ApplySelectedActionsButton.IsEnabled = false;
+            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileCopying;
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
 
-            var pcGames = PcFoldersWithGdiListView.SelectedItems.Cast<GameOnPc>().ToList();
-            var gamesToCopy = pcGames;
+            var gamesToCopy = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().Where(i => i.MustCopy);
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
             CopyProgressLabel.Visibility = Visibility.Visible;
@@ -279,8 +268,8 @@ namespace GDEmuSdCardManager
                 }
             }
 
-            CopyGamesToSdButton.IsEnabled = true;
-            CopyGamesToSdButton.Content = CopyGamesButtonTextWhileActive;
+            ApplySelectedActionsButton.IsEnabled = true;
+            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileActive;
 
             if (CopyProgressBar.Value < gamesToCopy.Count())
             {
@@ -290,6 +279,26 @@ namespace GDEmuSdCardManager
             {
                 WriteSuccess($"Games copied");
             }
+            LoadAllButton_Click(null, null);
+        }
+
+        private void RemoveSelectedGames()
+        {
+            var gamesToRemove = PcFoldersWithGdiListView
+                .Items
+                .Cast<GameOnPc>()
+                .Where(g => g.MustRemove && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
+            WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
+            foreach (GameOnPc itemToRemove in gamesToRemove)
+            {
+                WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
+                var gameOnSdToRemove = gamesOnSdCard
+                    .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
+
+                FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
+            }
+
+            WriteSuccess($"Games deleted");
             LoadAllButton_Click(null, null);
         }
 
@@ -332,6 +341,20 @@ namespace GDEmuSdCardManager
             };
             InfoRichTextBox.Document.Blocks.Add(error);
             InfoRichTextBox.ScrollToEnd();
+        }
+    }
+
+    public class InvertedBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return !(bool)value;
+
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return !(bool)value;
         }
     }
 }
