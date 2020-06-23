@@ -10,6 +10,8 @@ namespace GDEmuSdCardManager
     {
         public string PcDefaultPath { get; set; } = "F:\\Roms\\Sega - Dreamcast";
         public string SdDefaultDrive { get; set; } = "H:\\";
+        public string VersionUrl { get; set; } = "https://raw.githubusercontent.com/Louhike/Ugly-GDEmu-Games-Manager/master/VERSION";
+        public string ReleasesUrl { get; set; } = "https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases";
 
         /// <summary>
         /// Load the configuration from the JSON file

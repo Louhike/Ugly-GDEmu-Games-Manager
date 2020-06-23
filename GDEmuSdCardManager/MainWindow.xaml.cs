@@ -1,4 +1,4 @@
-﻿using GDEmuSdCardManager.BLL;
+using GDEmuSdCardManager.BLL;
 using GDEmuSdCardManager.DTO;
 using Ookii.Dialogs.Wpf;
 using System;
@@ -8,8 +8,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Windows;
-using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -27,6 +29,8 @@ namespace GDEmuSdCardManager
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
+        private static readonly Version currentVersion = new Version(File.ReadAllText(@".\VERSION"));
+        private static readonly UgdegmConfiguration config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
@@ -40,6 +44,48 @@ namespace GDEmuSdCardManager
             PcFolderTextBox.TextChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
+
+            Title += " - " + currentVersion;
+
+            Version lastVersion;
+            using (System.Net.WebClient wc = new System.Net.WebClient())
+            {
+                string lastVersionString = wc.DownloadString(config.VersionUrl);
+                lastVersion = new Version(Regex.Replace(lastVersionString, @"\t|\n|\r", ""));
+            }
+
+            if (currentVersion.CompareTo(lastVersion) < 0)
+            {
+                string messageBoxText = "A new version is available. Do you want to download it?";
+                string caption = "New version available!";
+                MessageBoxButton button = MessageBoxButton.YesNo;
+                MessageBoxImage icon = MessageBoxImage.Warning;
+                MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
+                if (messageBoxResult == MessageBoxResult.Yes)
+                {
+                    OpenBrowser(config.ReleasesUrl);
+                }
+            }
+        }
+
+        private static void OpenBrowser(string url)
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                Process.Start(new ProcessStartInfo("cmd", $"/c start {url}"));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                Process.Start("xdg-open", url);
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                Process.Start("open", url);
+            }
+            //else
+            //{
+            //    ...
+            //}
         }
 
         private void OnFolderOrDriveChanged(object sender, RoutedEventArgs e)
@@ -78,7 +124,6 @@ namespace GDEmuSdCardManager
 
         private void LoadDefaultPaths()
         {
-            var config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
             PcFolderTextBox.Text = config.PcDefaultPath;
             SdFolderComboBox.SelectedItem = config.SdDefaultDrive;
         }
@@ -132,7 +177,7 @@ namespace GDEmuSdCardManager
                     {
                         game = GameManager.ExtractPcGameData(subFolder);
                     }
-                    catch(Exception error)
+                    catch (Exception error)
                     {
                         WriteError(error.Message);
                         continue;
@@ -157,11 +202,10 @@ namespace GDEmuSdCardManager
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
             try
             {
-                List<string> errors;
-                gamesOnSdCard = sdCardManager.GetGames(out errors);
-                if(errors.Any())
+                gamesOnSdCard = sdCardManager.GetGames(out List<string> errors);
+                if (errors.Any())
                 {
-                    foreach(var error in errors)
+                    foreach (var error in errors)
                     {
                         WriteError(error);
                     }
