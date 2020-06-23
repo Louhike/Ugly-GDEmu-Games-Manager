@@ -91,6 +91,10 @@ namespace GDEmuSdCardManager.BLL
                 {
                     FileManager.RemoveAllFilesInDirectory(destinationFolder);
                 }
+                else
+                {
+                    Directory.CreateDirectory(destinationFolder);
+                }
 
                 var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
 

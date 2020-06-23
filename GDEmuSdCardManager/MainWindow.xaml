@@ -65,7 +65,7 @@
                                 Header="Remove?" Width="55">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox Margin="5, 0" x:Name="MustRemoveCheckbox" IsChecked="{Binding MustRemove}">
+                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustRemove}">
                                         <CheckBox.Style>
                                             <Style TargetType="CheckBox">
                                                 <Style.Triggers>

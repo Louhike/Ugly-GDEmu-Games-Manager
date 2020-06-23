@@ -21,7 +21,7 @@ namespace GDEmuSdCardManager
     /// </summary>
     public partial class MainWindow : Window
     {
-        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Copy selected games to SD";
+        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
         private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Copying files...";
         private static readonly string ConfigurationPath = @".\config.json";
         private bool IsSdCardMounted = false;
@@ -218,8 +218,9 @@ namespace GDEmuSdCardManager
 
         private async void ApplySelectedActions(object sender, RoutedEventArgs e)
         {
-            await CopySelectedGames();
             RemoveSelectedGames();
+            await CopySelectedGames();
+            LoadAllButton_Click(null, null);
         }
 
         private async Task CopySelectedGames()
@@ -279,7 +280,6 @@ namespace GDEmuSdCardManager
             {
                 WriteSuccess($"Games copied");
             }
-            LoadAllButton_Click(null, null);
         }
 
         private void RemoveSelectedGames()
@@ -299,7 +299,6 @@ namespace GDEmuSdCardManager
             }
 
             WriteSuccess($"Games deleted");
-            LoadAllButton_Click(null, null);
         }
 
         private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
