@@ -30,7 +30,7 @@ namespace GDEmuSdCardManager
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
         private static readonly Version currentVersion = new Version(File.ReadAllText(@".\VERSION"));
-        private static readonly UgdegmConfiguration config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
+        private UgdegmConfiguration config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
@@ -347,12 +347,8 @@ namespace GDEmuSdCardManager
 
         private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
         {
-            var config = new UgdegmConfiguration()
-            {
-                PcDefaultPath = PcFolderTextBox.Text,
-                SdDefaultDrive = SdFolderComboBox.SelectedItem as string
-            };
-
+            config.PcDefaultPath = PcFolderTextBox.Text;
+            config.SdDefaultDrive = SdFolderComboBox.SelectedItem as string;
             config.Save(ConfigurationPath);
         }
 
