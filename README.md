@@ -9,21 +9,18 @@ It allows you to:
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
 * Remove Games from your SD card.
 * Show which games on your PC are not on your SD card.
+* Create a game index
+* Files with stranges track names will be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
+* GDI file are rewritten while copied on the SD card to improve compatibility.
 
 It also shows the free space on your SD card and the size of your games.
 
-## What will change in future version 0.6.0 (currently in test, should be released soon)
-* Files with stranges track names will work and be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
-* GDI file are rewritten while copied on the SD card to improve compatibility.
-* Warning if a new version of UGGM is available.
-* Use checkboxes instead of line selection to choose which games to copy/remove.
-* Better performance for shrinking.
-* Game indexing for GDMenu
-
-## What MIGHT change in future version 0.7.0
+## What will change in future version 0.7.0
 * Option to sort games alphabetically on SD card.
 * Handle CDI games.
 * Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
+* Allows game renaming
+* Add an option to force VGA
 
 ## I'm thinking about it for 0.8.0
 
