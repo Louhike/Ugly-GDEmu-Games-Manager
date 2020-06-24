@@ -2,7 +2,7 @@
 ![alt text](./capture1.png)
 
 ## What is Ugly GDEmu Games Manager
-UGGM is a software to manage your games on the SD card you have for GDEmu, as it can be cumbersome.
+UGGM is a Windows (for now) software to manage your games on the SD card you have for GDEmu, as it can be cumbersome.
 
 It allows you to:
 * Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
@@ -12,15 +12,20 @@ It allows you to:
 
 It also shows the free space on your SD card and the size of your games.
 
-## Roadmap
-1. Sort games alphabetically in the SD card
-2. Copy games from SD to PC.
-3. Increment the progress bar more gradually.
+## What will change in future version 0.6.0 (currently in test, should be released soon)
+* Files with stranges track names will work and be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
+* GDI file are rewritten while copied on the SD card to improve compatibility.
+* Warning if a new version of UGGM is available.
+* Use checkboxes instead of line selection to choose which games to copy/remove.
+* Better performance for shrinking.
+* Game indexing for GDMenu
 
-## Technical roadmap
-1. Use the last version of gditools with IronPython to shrink the games.
+## What MIGHT change in future version 0.7.0
+* Option to sort games alphabetically on SD card.
+* Handle CDI games.
+* Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
 
-## Would be nice to have
+## I'm thinking about it for 0.8.0
 
 * Automatically add covers if missing from https://archive.org/details/670dreamcastgamesjewelcoverpicturesconvertedto256x256.pvrfilesforgdemu.7z
 
