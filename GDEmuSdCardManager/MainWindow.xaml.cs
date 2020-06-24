@@ -265,6 +265,7 @@ namespace GDEmuSdCardManager
             RemoveSelectedGames();
             await CopySelectedGames();
             LoadAllButton_Click(null, null);
+            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
             WriteInfo("Creating Menu...");
             if (CreateMenuIndexCheckbox.IsChecked == true)
             {
