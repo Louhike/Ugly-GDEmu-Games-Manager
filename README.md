@@ -14,6 +14,7 @@ It also shows the free space on your SD card and the size of your games.
 
 ## What will change in future version 0.6.0 (currently in test, should be released soon)
 * Files with stranges track names will work and be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
+* GDI file are rewritten while copied on the SD card to improve compatibility.
 * Warning if a new version of UGGM is available.
 * Use checkboxes instead of line selection to choose which games to copy/remove.
 * Better performance for shrinking.
