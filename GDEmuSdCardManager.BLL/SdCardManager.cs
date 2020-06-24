@@ -103,8 +103,8 @@ namespace GDEmuSdCardManager.BLL
                     .Task;
                 if (!commandResult.Success)
                 {
-                    // There is always an error even if it's working, find out why (or use the new gditools)
-                    //throw new System.Exception("There was an error while extracting the GDI: " + commandResult.StandardError);
+                    // There is always an error even if it's working, need find out why
+                    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
                 }
 
                 var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
@@ -125,7 +125,7 @@ namespace GDEmuSdCardManager.BLL
             }
         }
 
-        private string GetGdemuFolderNameFromIndex(short index)
+        public static string GetGdemuFolderNameFromIndex(short index)
         {
             return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
         }
