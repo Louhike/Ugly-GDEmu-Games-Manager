@@ -18,4 +18,15 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="menu_tools_and_files\**">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="menu_tools_and_files\content\readme.txt" />
+    <None Remove="menu_tools_and_files\content\unscrambled.bin" />
+  </ItemGroup>
 </Project>
