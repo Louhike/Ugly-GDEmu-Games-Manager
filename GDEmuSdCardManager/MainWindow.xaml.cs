@@ -265,6 +265,18 @@ namespace GDEmuSdCardManager
             RemoveSelectedGames();
             await CopySelectedGames();
             LoadAllButton_Click(null, null);
+            WriteInfo("Creating Menu...");
+            if (CreateMenuIndexCheckbox.IsChecked == true)
+            {
+                await MenuManager.CreateIndex(SdFolderComboBox.SelectedItem as string, gamesOnSdCard);
+                LoadAllButton_Click(null, null);
+            }
+            else
+            {
+                await MenuManager.CreateMenuWithoutIndex(SdFolderComboBox.SelectedItem as string);
+            }
+
+            WriteSuccess("Menu created");
         }
 
         private async Task CopySelectedGames()
@@ -380,20 +392,6 @@ namespace GDEmuSdCardManager
             };
             InfoRichTextBox.Document.Blocks.Add(error);
             InfoRichTextBox.ScrollToEnd();
-        }
-    }
-
-    public class InvertedBooleanConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return !(bool)value;
-
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
-            return !(bool)value;
         }
     }
 }

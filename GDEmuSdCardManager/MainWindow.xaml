@@ -104,11 +104,11 @@
                 </ListView.View>
             </ListView>
             <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
-            <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" HorizontalAlignment="Right" Margin="0,90,7,0" VerticalAlignment="Top" Click="ApplySelectedActions" Width="202" Height="30"/>
+            <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" HorizontalAlignment="Right" Margin="0,71,6,0" VerticalAlignment="Top" Click="ApplySelectedActions" Width="202" Height="30"/>
             <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
             <Label x:Name="SdSpaceLabel" Content="/" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
-            <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Hidden" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
-            <ProgressBar x:Name="CopyProgressBar" Visibility="Hidden" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
+            <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Visible" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
+            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
             <Button x:Name="SaveAsDefaultsButton" Content="Save as&#xa;defaults" Margin="513,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="55" Height="50"/>
             <Button x:Name="LoadDefaultsPathsButton" Margin="571,10,0,0" VerticalAlignment="Top" Click="LoadDefaultsPathsButton_Click" HorizontalAlignment="Left" Width="55" Height="50">
                 <StackPanel>
@@ -124,6 +124,7 @@
             </RichTextBox>
             <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" Height="25" Margin="0,12,11,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
             <TextBox FontSize="9" IsReadOnly="True" Margin="0,37,9,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="201"/>
+            <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" HorizontalAlignment="Left" Margin="814,115,0,0" VerticalAlignment="Top"/>
 
 
         </Grid>
