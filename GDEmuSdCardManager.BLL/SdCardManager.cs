@@ -117,8 +117,11 @@ namespace GDEmuSdCardManager.BLL
             {
                 await FileManager.CopyDirectoryContentToAnother(game.FullPath, destinationFolder, true);
 
-                game.GdiInfo.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
-                game.GdiInfo.RenameTrackFiles(destinationFolder);
+                var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
+                var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                File.Delete(gdiPath);
+                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                newGdi.RenameTrackFiles(destinationFolder);
             }
         }
 
