@@ -124,7 +124,7 @@
             </RichTextBox>
             <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" Height="25" Margin="0,12,11,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
             <TextBox FontSize="9" IsReadOnly="True" Margin="0,37,9,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="201"/>
-            <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" HorizontalAlignment="Left" Margin="814,115,0,0" VerticalAlignment="Top"/>
+            <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" Margin="0,115,86,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="120"/>
 
 
         </Grid>
