@@ -1,16 +1,21 @@
 using GDEmuSdCardManager.BLL;
 using GDEmuSdCardManager.DTO;
+using log4net;
+using log4net.Appender;
+using log4net.Config;
+using log4net.Layout;
+using log4net.Repository.Hierarchy;
 using Ookii.Dialogs.Wpf;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Globalization;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Documents;
@@ -23,30 +28,103 @@ namespace GDEmuSdCardManager
     /// </summary>
     public partial class MainWindow : Window
     {
+        private static readonly ILog logger = LogManager.GetLogger(typeof(MainWindow));
         private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
-        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Copying files...";
+        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying selected actions...";
         private static readonly string ConfigurationPath = @".\config.json";
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
-        private static readonly Version currentVersion = new Version(File.ReadAllText(@".\VERSION"));
-        private UgdegmConfiguration config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
+        private Version currentVersion;
+        private UgdegmConfiguration config;
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
         public MainWindow()
         {
+            SetupExceptionHandling();
             InitializeComponent();
-            LoadDefaultPaths();
+
             gamesOnSdCard = new List<GameOnSd>();
+
+            currentVersion = new Version(File.ReadAllText(@".\VERSION"));
+            config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
+
+            LoadDefaultPaths();
+
             DriveInfo[] allDrives = DriveInfo.GetDrives();
             SdFolderComboBox.ItemsSource = allDrives.Select(d => d.Name);
+
             PcFolderTextBox.TextChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
             Title += " - " + currentVersion;
+            CheckUpdate();
+        }
 
+        private void SetupExceptionHandling()
+        {
+            log4net.Repository.ILoggerRepository repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
+            Hierarchy hierarchy = (Hierarchy)repository;
+            PatternLayout patternLayout = new PatternLayout
+            {
+                ConversionPattern = "%date %level - %message%newline%exception"
+            };
+            patternLayout.ActivateOptions();
+
+            RollingFileAppender roller = new RollingFileAppender
+            {
+                AppendToFile = true,
+                File = "Log_",
+                DatePattern = "dd_MM_yyyy'.log'",
+                Layout = patternLayout,
+                MaxFileSize = 1024 * 1024 * 10,
+                MaxSizeRollBackups = 10,
+                StaticLogFileName = false,
+                RollingStyle = RollingFileAppender.RollingMode.Composite
+            };
+            roller.ActivateOptions();
+            hierarchy.Root.AddAppender(roller);
+
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+                LogUnhandledException((Exception)e.ExceptionObject, "AppDomain.CurrentDomain.UnhandledException");
+
+            Application.Current.DispatcherUnhandledException += (s, e) =>
+            {
+                LogUnhandledException(e.Exception, "Application.Current.DispatcherUnhandledException");
+                e.Handled = true;
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                LogUnhandledException(e.Exception, "TaskScheduler.UnobservedTaskException");
+                e.SetObserved();
+            };
+        }
+
+        private void LogUnhandledException(Exception exception, string source)
+        {
+            string message = $"Unhandled exception ({source})";
+            try
+            {
+                System.Reflection.AssemblyName assemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName();
+                message = string.Format("Unhandled exception in {0}", assemblyName.Name);
+            }
+            catch (Exception ex)
+            {
+                logger.Error("Exception in LogUnhandledException", ex);
+            }
+            finally
+            {
+                logger.Error(message, exception);
+                WriteError(message + " - " + exception.Message);
+            }
+        }
+
+        private void CheckUpdate()
+        {
             Version lastVersion;
             using (System.Net.WebClient wc = new System.Net.WebClient())
             {
@@ -137,12 +215,17 @@ namespace GDEmuSdCardManager
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
+            ScanFolders();
+            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
+            HavePathsChangedSinceLastScanSuccessful = false;
+        }
+
+        private void ScanFolders()
+        {
             WriteInfo("Starting scan...");
             IsScanSuccessful = true;
             LoadGamesOnPc();
             LoadGamesOnSd();
-            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
-            HavePathsChangedSinceLastScanSuccessful = false;
         }
 
         private void LoadGamesOnPc()
@@ -220,6 +303,10 @@ namespace GDEmuSdCardManager
                 gamesOnSdCard = new List<GameOnSd>();
                 return;
             }
+            catch (Exception ex)
+            {
+                WriteError(ex.Message);
+            }
             finally
             {
                 UpdatePcFoldersIsInSdCard();
@@ -262,28 +349,37 @@ namespace GDEmuSdCardManager
 
         private async void ApplySelectedActions(object sender, RoutedEventArgs e)
         {
+            ApplySelectedActionsButton.IsEnabled = false;
+            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileCopying;
             RemoveSelectedGames();
             await CopySelectedGames();
-            LoadAllButton_Click(null, null);
-            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
+            ScanFolders();
             WriteInfo("Creating Menu...");
-            if (CreateMenuIndexCheckbox.IsChecked == true)
+            try
             {
-                await MenuManager.CreateIndex(SdFolderComboBox.SelectedItem as string, gamesOnSdCard);
-                LoadAllButton_Click(null, null);
+                if (CreateMenuIndexCheckbox.IsChecked == true)
+                {
+                    await MenuManager.CreateIndex(SdFolderComboBox.SelectedItem as string, gamesOnSdCard);
+                    LoadAllButton_Click(null, null);
+                }
+                else
+                {
+                    await MenuManager.CreateMenuWithoutIndex(SdFolderComboBox.SelectedItem as string);
+                }
+
+                WriteSuccess("Menu created");
             }
-            else
+            catch (Exception ex)
             {
-                await MenuManager.CreateMenuWithoutIndex(SdFolderComboBox.SelectedItem as string);
+                WriteError("Error while trying to create the menu: " + ex.Message);
             }
 
-            WriteSuccess("Menu created");
+            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileActive;
+            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
         }
 
         private async Task CopySelectedGames()
         {
-            ApplySelectedActionsButton.IsEnabled = false;
-            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileCopying;
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
 
             var gamesToCopy = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().Where(i => i.MustCopy);
@@ -306,7 +402,15 @@ namespace GDEmuSdCardManager
                 }
                 else
                 {
-                    index = sdCardManager.FindAvailableFolderForGame(index);
+                    try
+                    {
+                        index = sdCardManager.FindAvailableFolderForGame(index);
+                    }
+                    catch (Exception e)
+                    {
+                        WriteError("Error while trying to find an available folder to copy games: " + e.Message);
+                    }
+
                     if (index == -1)
                     {
                         WriteError($"You cannot have more than 9999 games on your SD card.");
@@ -326,9 +430,6 @@ namespace GDEmuSdCardManager
                 }
             }
 
-            ApplySelectedActionsButton.IsEnabled = true;
-            ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileActive;
-
             if (CopyProgressBar.Value < gamesToCopy.Count())
             {
                 WriteInfo($"There was an error. {CopyProgressBar.Value} games were copied.");
@@ -341,21 +442,28 @@ namespace GDEmuSdCardManager
 
         private void RemoveSelectedGames()
         {
-            var gamesToRemove = PcFoldersWithGdiListView
-                .Items
-                .Cast<GameOnPc>()
-                .Where(g => g.MustRemove && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
-            WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
-            foreach (GameOnPc itemToRemove in gamesToRemove)
+            try
             {
-                WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
-                var gameOnSdToRemove = gamesOnSdCard
-                    .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
+                var gamesToRemove = PcFoldersWithGdiListView
+                    .Items
+                    .Cast<GameOnPc>()
+                    .Where(g => g.MustRemove && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
+                WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
+                foreach (GameOnPc itemToRemove in gamesToRemove)
+                {
+                    WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
+                    var gameOnSdToRemove = gamesOnSdCard
+                        .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
 
-                FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
+                    FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
+                }
+
+                WriteSuccess($"Games deleted");
             }
-
-            WriteSuccess($"Games deleted");
+            catch (Exception e)
+            {
+                WriteError("Error while removing games: " + e.Message);
+            }
         }
 
         private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
