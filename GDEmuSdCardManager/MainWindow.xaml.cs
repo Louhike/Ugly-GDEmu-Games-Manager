@@ -75,7 +75,7 @@ namespace GDEmuSdCardManager
 
             RollingFileAppender roller = new RollingFileAppender
             {
-                AppendToFile = true,
+                AppendToFile = true,                
                 File = "Log_",
                 DatePattern = "dd_MM_yyyy'.log'",
                 Layout = patternLayout,
@@ -86,7 +86,8 @@ namespace GDEmuSdCardManager
             };
             roller.ActivateOptions();
             hierarchy.Root.AddAppender(roller);
-
+            hierarchy.Root.Level = log4net.Core.Level.Info;
+            hierarchy.Configured = true;
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
                 LogUnhandledException((Exception)e.ExceptionObject, "AppDomain.CurrentDomain.UnhandledException");
@@ -115,6 +116,7 @@ namespace GDEmuSdCardManager
             catch (Exception ex)
             {
                 logger.Error("Exception in LogUnhandledException", ex);
+                WriteError("Exception in LogUnhandledException - " + exception.Message);
             }
             finally
             {
@@ -355,6 +357,7 @@ namespace GDEmuSdCardManager
             await CopySelectedGames();
             ScanFolders();
             WriteInfo("Creating Menu...");
+            throw new Exception("KABOOM");
             try
             {
                 if (CreateMenuIndexCheckbox.IsChecked == true)
