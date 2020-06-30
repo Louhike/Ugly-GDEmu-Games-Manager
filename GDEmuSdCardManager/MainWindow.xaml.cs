@@ -2,7 +2,6 @@ using GDEmuSdCardManager.BLL;
 using GDEmuSdCardManager.DTO;
 using log4net;
 using log4net.Appender;
-using log4net.Config;
 using log4net.Layout;
 using log4net.Repository.Hierarchy;
 using Ookii.Dialogs.Wpf;
@@ -75,7 +74,7 @@ namespace GDEmuSdCardManager
 
             RollingFileAppender roller = new RollingFileAppender
             {
-                AppendToFile = true,                
+                AppendToFile = true,
                 File = "Log_",
                 DatePattern = "dd_MM_yyyy'.log'",
                 Layout = patternLayout,
@@ -357,7 +356,6 @@ namespace GDEmuSdCardManager
             await CopySelectedGames();
             ScanFolders();
             WriteInfo("Creating Menu...");
-            throw new Exception("KABOOM");
             try
             {
                 if (CreateMenuIndexCheckbox.IsChecked == true)
