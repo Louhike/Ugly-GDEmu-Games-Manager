@@ -12,6 +12,11 @@ namespace GDEmuSdCardManager.BLL
     {
         public async static Task CreateIndex(string destinationFolder, IEnumerable<GameOnSd> gamesToIndex)
         {
+            if(!Directory.Exists(Path.Combine(destinationFolder, @"01\disc.cdi")))
+            {
+                Directory.CreateDirectory(Path.Combine(destinationFolder, @"01"));
+            }
+
             var sdFolders = Directory.EnumerateDirectories(destinationFolder);
 
             foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && int.TryParse(Path.GetFileName(f), out int _)))
@@ -63,15 +68,17 @@ namespace GDEmuSdCardManager.BLL
                 File.AppendAllText(tempListIniPath, Environment.NewLine);
             }
 
-            var commandResult = await Command
+            await Command
                     .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G",  @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
                     .Task;
 
-            var commandResult2 = await Command
+            await Command
                     .Run(@".\menu_tools_and_files\cdi4dc.exe", @".\menu_tools_and_files\disc.iso", @".\menu_tools_and_files\disc.cdi")
                     .Task;
 
             File.Move(@".\menu_tools_and_files\disc.cdi", Path.Combine(destinationFolder, @"01\disc.cdi"), true);
+            File.Move(Path.Combine(tempPath, @"readme.txt"), Path.Combine(destinationFolder, @"01\readme.txt"), true);
+            FileManager.RemoveAllFilesInDirectory(tempPath);
         }
 
         public async static Task CreateMenuWithoutIndex(string destinationFolder)
