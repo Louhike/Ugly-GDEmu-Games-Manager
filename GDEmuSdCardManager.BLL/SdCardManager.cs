@@ -1,10 +1,11 @@
-﻿using GDEmuSdCardManager.DTO;
-using GDEmuSdCardManager.DTO.GDI;
+﻿using GDEmuSdCardManager.BLL.Extensions;
+using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace GDEmuSdCardManager.BLL
@@ -45,7 +46,7 @@ namespace GDEmuSdCardManager.BLL
                         var game = GameManager.ExtractSdGameData(subFolder);
                         gamesOnSdCard.Add(game);
                     }
-                    catch(Exception error)
+                    catch (Exception error)
                     {
                         errors.Add(error.Message);
                     }
@@ -87,7 +88,7 @@ namespace GDEmuSdCardManager.BLL
 
             if (game.MustShrink)
             {
-                if(Directory.Exists(destinationFolder))
+                if (Directory.Exists(destinationFolder))
                 {
                     FileManager.RemoveAllFilesInDirectory(destinationFolder);
                 }
@@ -98,14 +99,33 @@ namespace GDEmuSdCardManager.BLL
 
                 var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
 
-                var commandResult = await Command
-                    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
-                    .Task;
-                if (!commandResult.Success)
+                //var commandResult = await Command
+                //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
+                //    .Task;
+
+                var cts = new CancellationTokenSource();
+                cts.CancelAfter(TimeSpan.FromMinutes(2));
+                Command command = null;
+                try
                 {
-                    // There is always an error even if it's working, need find out why
-                    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
+                    command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder);
+                    await command.Task.WaitOrCancel(cts.Token);
                 }
+                catch (OperationCanceledException ex)
+                {
+                    if (command != null)
+                    {
+                        command.Kill();
+                    }
+
+                    throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
+                }
+
+                //if (!commandResult.Success)
+                //{
+                //    // There is always an error even if it's working, need find out why
+                //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
+                //}
 
                 var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
                 var newGdi = GameManager.GetGdiFromFile(gdiPath);

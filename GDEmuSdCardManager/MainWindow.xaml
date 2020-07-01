@@ -110,7 +110,7 @@
             <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Visible" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
             <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
             <Button x:Name="SaveAsDefaultsButton" Content="Save as&#xa;defaults" Margin="513,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="55" Height="50"/>
-            <Button x:Name="LoadDefaultsPathsButton" Margin="571,10,0,0" VerticalAlignment="Top" Click="LoadDefaultsPathsButton_Click" HorizontalAlignment="Left" Width="55" Height="50">
+            <Button x:Name="LoadDefaultsPathsButton" Margin="571,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="55" Height="50">
                 <StackPanel>
                     <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">Load</TextBlock>
                     <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">defaults</TextBlock>
