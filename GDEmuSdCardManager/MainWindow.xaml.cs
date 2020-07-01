@@ -427,6 +427,11 @@ namespace GDEmuSdCardManager
                 }
                 catch (Exception error)
                 {
+                    string messageBoxText = error.Message;
+                    string caption = "Error";
+                    MessageBoxButton button = MessageBoxButton.OK;
+                    MessageBoxImage icon = MessageBoxImage.Warning;
+                    MessageBox.Show(messageBoxText, caption, button, icon);
                     WriteError(error.Message);
                 }
             }

@@ -118,7 +118,7 @@ namespace GDEmuSdCardManager.BLL
                         command.Kill();
                     }
 
-                    throw new Exception($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
+                    throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
                 }
 
                 //if (!commandResult.Success)
