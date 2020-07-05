@@ -127,7 +127,11 @@ namespace GDEmuSdCardManager.BLL
                 //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
                 //}
 
-                var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
+                var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
+                if(gdiPath == null)
+                {
+                    throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
+                }
                 var newGdi = GameManager.GetGdiFromFile(gdiPath);
                 File.Delete(gdiPath);
                 newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
