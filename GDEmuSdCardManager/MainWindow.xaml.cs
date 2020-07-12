@@ -356,6 +356,7 @@ namespace GDEmuSdCardManager
             await CopySelectedGames();
             ScanFolders();
             WriteInfo("Creating Menu...");
+
             try
             {
                 if (CreateMenuIndexCheckbox.IsChecked == true)
@@ -374,6 +375,8 @@ namespace GDEmuSdCardManager
             {
                 WriteError("Error while trying to create the menu: " + ex.Message);
             }
+
+            ScanFolders();
 
             ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileActive;
             ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;

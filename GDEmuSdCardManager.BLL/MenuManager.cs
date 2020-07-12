@@ -19,48 +19,67 @@ namespace GDEmuSdCardManager.BLL
 
             var sdFolders = Directory.EnumerateDirectories(destinationFolder);
 
-            foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && int.TryParse(Path.GetFileName(f), out int _)))
+            foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
             {
+                if(Directory.Exists(folder + "_") && !Directory.EnumerateFileSystemEntries(folder + "_").Any())
+                {
+                    Directory.Delete(folder + "_");
+                }
+
                 Directory.Move(folder, folder + "_");
             }
 
             var tempPath = @".\menu_tools_and_files\temp_content";
-            if (Directory.Exists(tempPath))
-            {
-                FileManager.RemoveAllFilesInDirectory(tempPath);
-            }
-            else
-            {
-                Directory.CreateDirectory(tempPath);
-            }
-
             string tempListIniPath = tempPath + @"\LIST.INI";
 
-            await FileManager.CopyDirectoryContentToAnother(@".\menu_tools_and_files\content", tempPath, false);
-
-            for(short i = 2; i <= gamesToIndex.Count() + 1; i++)
+            try
             {
-                var game = gamesToIndex.OrderBy(g => g.GameName).ElementAt(i - 2);
-                string index = i.ToString(SdCardManager.GetGdemuFolderNameFromIndex(i));
+                if (Directory.Exists(tempPath))
+                {
+                    FileManager.RemoveAllFilesInDirectory(tempPath);
+                }
+                else
+                {
+                    Directory.CreateDirectory(tempPath);
+                }
 
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{ index}.name={game.GameName}");
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{index}.disc={game.FormattedDiscNumber}");
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{index}.vga=1");
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{index}.region={game.Region}");
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{index}.version={game.ProductV}");
-                File.AppendAllText(tempListIniPath, Environment.NewLine);
-                File.AppendAllText(tempListIniPath, $"{index}.date={game.ReleaseDate}");
+                await FileManager.CopyDirectoryContentToAnother(@".\menu_tools_and_files\content", tempPath, false);
 
-                string newPath = Path.Combine(destinationFolder, index);
-                Directory.Move(game.FullPath + "_", newPath);
-                File.Create(Path.Combine(newPath, "name.txt")).Close();
-                File.AppendAllText(Path.Combine(newPath, "name.txt"), game.GameName);
+                for (short i = 2; i <= gamesToIndex.Count() + 1; i++)
+                {
+                    var game = gamesToIndex.OrderBy(g => g.GameName).ElementAt(i - 2);
+                    string index = i.ToString(SdCardManager.GetGdemuFolderNameFromIndex(i));
+
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{ index}.name={game.GameName}");
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{index}.disc={game.FormattedDiscNumber}");
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{index}.vga=1");
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{index}.region={game.Region}");
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{index}.version={game.ProductV}");
+                    File.AppendAllText(tempListIniPath, Environment.NewLine);
+                    File.AppendAllText(tempListIniPath, $"{index}.date={game.ReleaseDate}");
+
+                    string newPath = Path.Combine(destinationFolder, index);
+                    Directory.Move(game.FullPath + "_", newPath);
+                    File.Create(Path.Combine(newPath, "name.txt")).Close();
+                    File.AppendAllText(Path.Combine(newPath, "name.txt"), game.GameName);
+                }
+            }
+            catch
+            {
+                var sdFoldersWithUnderscore = Directory.EnumerateDirectories(destinationFolder).Where(f => Path.GetFileName(f).Contains("_"));
+
+                foreach (var folderWithUnderscore in sdFoldersWithUnderscore)
+                {
+                    Directory.Move(folderWithUnderscore, folderWithUnderscore.Replace("_", string.Empty));
+                }
+
+                throw;
             }
 
             for(int i = 0; i <= 2; i++ )
