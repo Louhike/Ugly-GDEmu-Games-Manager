@@ -21,6 +21,11 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && int.TryParse(Path.GetFileName(f), out int _)))
             {
+                if (Directory.Exists(folder + "_"))
+                {
+                    Directory.Delete(folder + "_", true);
+                }
+
                 Directory.Move(folder, folder + "_");
             }
 
@@ -58,7 +63,15 @@ namespace GDEmuSdCardManager.BLL
                 File.AppendAllText(tempListIniPath, $"{index}.date={game.ReleaseDate}");
 
                 string newPath = Path.Combine(destinationFolder, index);
-                Directory.Move(game.FullPath + "_", newPath);
+                if(!game.FullPath.Contains("_"))
+                {
+                    Directory.Move(game.FullPath + "_", newPath);
+                }
+                else
+                {
+                    Directory.Move(game.FullPath, newPath);
+                }
+
                 File.Create(Path.Combine(newPath, "name.txt")).Close();
                 File.AppendAllText(Path.Combine(newPath, "name.txt"), game.GameName);
             }

@@ -430,7 +430,6 @@ namespace GDEmuSdCardManager
                 if (CreateMenuIndexCheckbox.IsChecked == true)
                 {
                     await MenuManager.CreateIndex(SdFolderComboBox.SelectedItem as string, gamesOnSdCard);
-                    LoadAllButton_Click(null, null);
                 }
                 else
                 {
@@ -444,6 +443,7 @@ namespace GDEmuSdCardManager
                 WriteError("Error while trying to create the menu: " + ex.Message);
             }
 
+            ScanFolders();
             ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileActive;
             ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
         }
