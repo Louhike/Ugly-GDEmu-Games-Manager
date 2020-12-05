@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -34,6 +35,7 @@ namespace GDEmuSdCardManager
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
+        private GridLength[] starHeight;
         private Version currentVersion;
         private UgdegmConfiguration config;
 
@@ -58,8 +60,46 @@ namespace GDEmuSdCardManager
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
+            // Initialization for the expanders
+            starHeight = new GridLength[ExpanderGrid.RowDefinitions.Count];
+            starHeight[0] = ExpanderGrid.RowDefinitions[0].Height;
+            starHeight[2] = ExpanderGrid.RowDefinitions[2].Height;
+            ExpandedOrCollapsed(FoldersExpander);
+            ExpandedOrCollapsed(GamesExpander);
+            FoldersExpander.Expanded += ExpandedOrCollapsed;
+            FoldersExpander.Collapsed += ExpandedOrCollapsed;
+            GamesExpander.Expanded += ExpandedOrCollapsed;
+            GamesExpander.Collapsed += ExpandedOrCollapsed;
+
             Title += " - " + currentVersion;
             CheckUpdate();
+        }
+
+
+        private void ExpandedOrCollapsed(object sender, RoutedEventArgs e)
+        {
+            ExpandedOrCollapsed(sender as Expander);
+        }
+
+        private void ExpandedOrCollapsed(Expander expander)
+        {
+            var rowIndex = Grid.GetRow(expander);
+            var row = ExpanderGrid.RowDefinitions[rowIndex];
+            if (expander.IsExpanded)
+            {
+                row.Height = starHeight[rowIndex];
+                row.MinHeight = 50;
+            }
+            else
+            {
+                starHeight[rowIndex] = row.Height;
+                row.Height = GridLength.Auto;
+                row.MinHeight = 0;
+            }
+
+            var bothExpanded = FoldersExpander.IsExpanded && GamesExpander.IsExpanded;
+            ExpanderGridSplitter.Visibility = bothExpanded ?
+                Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SetupExceptionHandling()

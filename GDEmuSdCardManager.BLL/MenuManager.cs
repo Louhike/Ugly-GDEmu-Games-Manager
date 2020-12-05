@@ -98,11 +98,11 @@ namespace GDEmuSdCardManager.BLL
             await FileManager.CopyDirectoryContentToAnother(@".\menu_tools_and_files\content", tempPath, false);
             File.Delete(tempListIniPath);
 
-            var commandResult = await Command
+            await Command
                     .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G", @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
                     .Task;
 
-            var commandResult2 = await Command
+            await Command
                     .Run(@".\menu_tools_and_files\cdi4dc.exe", @".\menu_tools_and_files\disc.iso", @".\menu_tools_and_files\disc.cdi")
                     .Task;
 
