@@ -32,6 +32,7 @@ namespace GDEmuSdCardManager
         private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
         private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying selected actions...";
         private static readonly string ConfigurationPath = @".\config.json";
+        private static readonly string pathSplitter = @"|";
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
@@ -74,7 +75,6 @@ namespace GDEmuSdCardManager
             Title += " - " + currentVersion;
             CheckUpdate();
         }
-
 
         private void ExpandedOrCollapsed(object sender, RoutedEventArgs e)
         {
@@ -247,11 +247,16 @@ namespace GDEmuSdCardManager
             SdFolderComboBox.SelectedItem = config.SdDefaultDrive;
         }
 
-        private void PcBrowseButton_Click(object sender, RoutedEventArgs e)
+        private void PcAddButton_Click(object sender, RoutedEventArgs e)
         {
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
-            PcFolderTextBox.Text = browserDialog.SelectedPath;
+            PcFolderTextBox.Text += pathSplitter + browserDialog.SelectedPath;
+        }
+
+        private void PcClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            PcFolderTextBox.Text = string.Empty;
         }
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
@@ -272,27 +277,51 @@ namespace GDEmuSdCardManager
         private void LoadGamesOnPc()
         {
             PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
-            if (!Directory.Exists(PcFolderTextBox.Text))
+
+            if (string.IsNullOrEmpty(PcFolderTextBox.Text))
             {
-                WriteError("PC path is invalid");
+                WriteError("PC path must not be empty");
                 IsScanSuccessful = false;
                 return;
             }
 
-            var subFoldersList = Directory.EnumerateDirectories(PcFolderTextBox.Text);
+            IEnumerable<string> paths = PcFolderTextBox.Text.Split(pathSplitter);
+
+            foreach(string path in paths)
+            {
+                if (!Directory.Exists(path))
+                {
+                    WriteError($"PC path {path} is invalid");
+                    IsScanSuccessful = false;
+                }
+
+            }
+
+            if(!IsScanSuccessful)
+            {
+                return;
+            }
+
+            List<string> subFoldersList = new List<string>();
+            foreach (string path in paths)
+            {
+                subFoldersList.AddRange(Directory.EnumerateDirectories(path));
+
+            }
+
             var subFoldersWithGdiList = new List<GameOnPc>();
 
             foreach (var subFolder in subFoldersList)
             {
                 if (Directory
                     .EnumerateFiles(subFolder)
-                    .Count(f => System.IO.Path.GetExtension(f) == ".gdi") > 1)
+                    .Count(f => Path.GetExtension(f) == ".gdi") > 1)
                 {
                     WriteError($"You have more than one GDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
                     continue;
                 }
 
-                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi");
 
                 if (gdiFile != null)
                 {
