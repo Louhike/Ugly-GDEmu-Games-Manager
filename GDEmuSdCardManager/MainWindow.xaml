@@ -6,127 +6,163 @@
         xmlns:local="clr-namespace:GDEmuSdCardManager"
         mc:Ignorable="d"
         WindowStyle="SingleBorderWindow"
-        Title="UGGM - Ugly GDEmu Games Manager" Height="450" Width="1020" MinWidth="950">
-    <Grid>
-        <Grid Background="#FFE5E5E5">
-            <Label Content="Games directory" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="98"/>
-            <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,10,0,0" Text="Games Directory" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>
-            <Button x:Name="PcBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,10,0,0" VerticalAlignment="Top" Click="PcBrowseButton_Click" Width="57"/>
-            <Label Content="SD card root" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="98"/>
-            <ComboBox x:Name="SdFolderComboBox" HorizontalAlignment="Left" Margin="113,37,0,0" VerticalAlignment="Top" Width="120"/>
-            <!--<TextBox x:Name="SdFolderTextBox" BorderBrush="LightGray" HorizontalAlignment="Left" Margin="113,40,0,0" Text="SD card root" TextWrapping="Wrap" VerticalAlignment="Top" Width="333" Height="20"/>-->
-            <!--<Button x:Name="SdBrowseButton" Content="Browse" HorizontalAlignment="Left" Margin="451,40,0,0" VerticalAlignment="Top" Click="SdBrowseButton_Click" Width="57"/>-->
-            <ListView x:Name="PcFoldersWithGdiListView" Margin="10,71,225,10">
-                <!--<ListView.Resources>
-                    <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
-                </ListView.Resources>-->
-                <ListView.View>
-                    <GridView>
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=GameName}" 
-                                Header="Game" Width="140" />
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=FormattedDiscNumber}" 
-                                Header="Disc" Width="30" />
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=Path}" 
-                                Header="Folder" Width="200"/>
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=FormattedSize}" 
-                                Header="Size on PC" Width="65"/>
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=SdFormattedSize}" 
-                                Header="Size on SD" Width="65"/>
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=IsInSdCardString}" 
-                                Header="In SD?" Width="40"/>
-                        <GridViewColumn DisplayMemberBinding=
-                                "{Binding Path=SdFolder}" 
-                                Header="SD folder" Width="55"/>
-                        <GridViewColumn
-                                Header="Copy?" Width="50">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustCopy}" >
-                                        <CheckBox.Style>
-                                            <Style TargetType="CheckBox">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding MustRemove}" Value="True">
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </CheckBox.Style>
-                                    </CheckBox>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn
-                                Header="Remove?" Width="55">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustRemove}">
-                                        <CheckBox.Style>
-                                            <Style TargetType="CheckBox">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding MustCopy}" Value="True">
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                    </DataTrigger>
-                                                    <DataTrigger Binding="{Binding IsInSdCard}" Value="False">
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </CheckBox.Style>
-                                    </CheckBox>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                        <GridViewColumn
-                                Header="Shrink?" Width="50">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}">
-                                        <CheckBox.Style>
-                                            <Style TargetType="CheckBox">
-                                                <Style.Triggers>
-                                                    <DataTrigger Binding="{Binding MustCopy}" Value="False">
-                                                        <Setter Property="IsEnabled" Value="False"/>
-                                                    </DataTrigger>
-                                                </Style.Triggers>
-                                            </Style>
-                                        </CheckBox.Style>
-                                    </CheckBox>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
-                    </GridView>
-                </ListView.View>
-            </ListView>
-            <Button x:Name="LoadAllButton" Content="Scan" Margin="631,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="87" Height="50"/>
-            <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" HorizontalAlignment="Right" Margin="0,71,6,0" VerticalAlignment="Top" Click="ApplySelectedActions" Width="202" Height="30"/>
-            <Label Content="Free space in SD:" HorizontalAlignment="Right" Margin="0,135,110,0" VerticalAlignment="Top"/>
-            <Label x:Name="SdSpaceLabel" Content="/" HorizontalAlignment="Right" Margin="0,135,51,0" VerticalAlignment="Top" Width="56"/>
-            <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Visible" Margin="0,161,121,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="89"/>
-            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" Height="8" Margin="0,196,6,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="200"/>
-            <Button x:Name="SaveAsDefaultsButton" Content="Save as&#xa;defaults" Margin="513,10,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Left" Width="55" Height="50"/>
-            <Button x:Name="LoadDefaultsPathsButton" Margin="571,10,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Left" Width="55" Height="50">
-                <StackPanel>
-                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">Load</TextBlock>
-                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">defaults</TextBlock>
-                    <TextBlock TextWrapping="Wrap" HorizontalAlignment="Center">paths</TextBlock>
-                </StackPanel>
-            </Button>
-            <Label Content="Info:" Margin="0,209,169,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="41" Height="26"/>
-            <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" Margin="0,235,8,10" HorizontalAlignment="Right" Width="202" Block.LineHeight="1">
-                <FlowDocument>
-                </FlowDocument>
-            </RichTextBox>
-            <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" Height="25" Margin="0,12,11,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="197"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at"/></TextBlock>
-            <TextBox FontSize="9" IsReadOnly="True" Margin="0,37,9,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="201"/>
-            <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" Margin="0,115,86,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="120"/>
+        Title="UGGM - Ugly GDEmu Games Manager" Height="450" Width="1000" MinWidth="640">
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom">
+            <Label Content="Free space in SD:" Margin="0,0,0,0" HorizontalAlignment="Left" Width="100" Height="28" VerticalAlignment="Bottom" />
+            <Label x:Name="SdSpaceLabel" Content="/" Margin="0,0,0,0" HorizontalAlignment="Left" Width="56" Height="28" VerticalAlignment="Bottom" />
+            <Label x:Name="CopyProgressLabel" Content="Copy progress:" Visibility="Visible" Margin="0,0,0,0" HorizontalAlignment="Left" Width="89" Height="28" VerticalAlignment="Bottom" />
+            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" Margin="0,0,0,0" HorizontalAlignment="Left" Width="200" Height="15" VerticalAlignment="Bottom" />
+        </StatusBar>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="180" />
+            </Grid.ColumnDefinitions>
+            <Grid x:Name="ExpanderGrid" Background="#FFE5E5E5">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="100" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition />
+                </Grid.RowDefinitions>
 
+                <Expander
+                x:Name="FoldersExpander"
+                Header="Games folders and SD drive"
+                Grid.Row="0"
+                ExpandDirection="Up"
+                IsExpanded="True">
+                    <Grid Background="#FFE5E5E5">
+                        <Label Content="Games directories" HorizontalAlignment="Left" Margin="10,7,0,0" VerticalAlignment="Top" Width="105" />
+                        <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" Margin="120,10,286,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="20" />
+                        <Button x:Name="PcAddButton" Content="Add" HorizontalAlignment="Right" Margin="0,10,224,0" VerticalAlignment="Top" Click="PcAddButton_Click" Width="57" />
+                        <Button x:Name="PcClearButton" Content="Clear" HorizontalAlignment="Right" Margin="0,10,162,0" VerticalAlignment="Top" Click="PcClearButton_Click" Width="57" />
+                        <Label Content="SD card root" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="98" />
+                        <ComboBox x:Name="SdFolderComboBox" HorizontalAlignment="Left" Margin="120,37,0,0" VerticalAlignment="Top" Width="120" />
+                        <Button x:Name="SaveAsDefaultsButton" Content="Save as defaults" Margin="0,38,449,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Right" Width="119" Height="21" />
+                        <Button x:Name="LoadDefaultsPathsButton" Content="Load default paths" Margin="0,37,322,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Right" Width="122" Height="22"></Button>
+                        <Button x:Name="LoadAllButton" VerticalAlignment="Top" Content="Scan" Margin="496,37,214,0" Click="LoadAllButton_Click" Height="22" />
+                    </Grid>
+                </Expander>
 
+                <GridSplitter Name="ExpanderGridSplitter"
+                         ResizeDirection="Rows"
+                         HorizontalAlignment="Stretch"
+                         Grid.Row="1"
+                         Height="5"
+                         Background="Gray" />
+
+                <Expander
+                x:Name="GamesExpander"
+                Header="Games"
+                Grid.Row="2"
+                IsExpanded="True">
+                    <Grid Background="#FFE5E5E5">
+                        <ListView x:Name="PcFoldersWithGdiListView" Margin="0,0,0,37">
+                            <ListView.View>
+                                <GridView>
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=GameName}"
+                                    Header="Game" Width="140" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=FormattedDiscNumber}"
+                                    Header="Disc" Width="30" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=Path}"
+                                    Header="Folder" Width="200" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=FormattedSize}"
+                                    Header="Size on PC" Width="65" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=SdFormattedSize}"
+                                    Header="Size on SD" Width="65" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=IsInSdCardString}"
+                                    Header="In SD?" Width="40" />
+                                    <GridViewColumn DisplayMemberBinding=
+                                    "{Binding Path=SdFolder}"
+                                    Header="SD folder" Width="55" />
+                                    <GridViewColumn
+                                    Header="Copy?" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="5, 0" IsChecked="{Binding MustCopy}">
+                                                    <CheckBox.Style>
+                                                        <Style TargetType="CheckBox">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding MustRemove}" Value="True">
+                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </CheckBox.Style>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn
+                                    Header="Remove?" Width="55">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="5, 0" IsChecked="{Binding MustRemove}">
+                                                    <CheckBox.Style>
+                                                        <Style TargetType="CheckBox">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding MustCopy}" Value="True">
+                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsInSdCard}" Value="False">
+                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </CheckBox.Style>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                    <GridViewColumn
+                                    Header="Shrink?" Width="50">
+                                        <GridViewColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}">
+                                                    <CheckBox.Style>
+                                                        <Style TargetType="CheckBox">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding MustCopy}" Value="False">
+                                                                    <Setter Property="IsEnabled" Value="False" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </CheckBox.Style>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </GridViewColumn.CellTemplate>
+                                    </GridViewColumn>
+                                </GridView>
+                            </ListView.View>
+                        </ListView>
+
+                        <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" Margin="0,0,0,0" Click="ApplySelectedActions" HorizontalAlignment="Left" Width="150" Height="30" VerticalAlignment="Bottom" />
+                        <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" Margin="171,0,0,7" HorizontalAlignment="Left" Width="120" Height="15" VerticalAlignment="Bottom" />
+                    </Grid>
+                </Expander>
+            </Grid>
+            <GridSplitter Name="MainGridSplitter"
+                         ResizeDirection="Columns"
+                         HorizontalAlignment="Stretch"
+                         Grid.Column="1"
+                         Width="5"
+                         Background="Gray" />
+            <Grid Grid.Column="2">
+                <Label Content="Info:" Margin="20,81,20,0" Height="26" VerticalAlignment="Top" />
+                <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" Margin="20,112,20,10" Block.LineHeight="1">
+                    <FlowDocument />
+                </RichTextBox>
+                <TextBlock FontSize="9" IsHitTestVisible="False" IsManipulationEnabled="False" Height="25" Margin="20,11,20,0" TextWrapping="Wrap" VerticalAlignment="Top"><Run Language="fr-fr" Text="If you have an error or do not understand something, please leave an issue at" /></TextBlock>
+                <TextBox FontSize="9" Background="White" IsReadOnly="True" Margin="20,36,20,0" Text="https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues" TextWrapping="Wrap" VerticalAlignment="Top" />
+            </Grid>
         </Grid>
-    </Grid>
+    </DockPanel>
 </Window>
