@@ -147,7 +147,17 @@ namespace GDEmuSdCardManager.BLL
 
         public static string GetGdemuFolderNameFromIndex(short index)
         {
-            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+            if(index < 100)
+            {
+                return "D2";
+            }
+
+            if(index < 1000)
+            {
+                return "D3";
+            }
+
+            return "D4";
         }
     }
 }

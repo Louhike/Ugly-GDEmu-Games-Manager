@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
 namespace GDEmuSdCardManager.BLL
@@ -11,7 +10,7 @@ namespace GDEmuSdCardManager.BLL
 
         public static long GetDirectorySize(string dirPath)
         {
-            if (Directory.Exists(dirPath) == false)
+            if (!Directory.Exists(dirPath))
             {
                 return 0;
             }
@@ -70,13 +69,13 @@ namespace GDEmuSdCardManager.BLL
             {
                 string fileName = Path.GetFileNameWithoutExtension(fileToCopy);
                 string fileExtension = Path.GetExtension(fileToCopy);
-                if(fileExtension == ".gdi" && renameGdiFileToDisc)
+                if (fileExtension == ".gdi" && renameGdiFileToDisc)
                 {
                     fileName = "disc";
                 }
 
                 fileName += fileExtension;
-                string filePath = Path.GetFullPath(toDirectory + @"\" + fileName);
+                string filePath = Path.GetFullPath(toDirectory + Path.PathSeparator + fileName);
                 using (FileStream SourceStream = File.Open(fileToCopy, FileMode.Open))
                 {
                     using (FileStream DestinationStream = File.Create(filePath))

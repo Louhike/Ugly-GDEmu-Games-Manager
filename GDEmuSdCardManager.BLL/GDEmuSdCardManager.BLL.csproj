@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <CodeAnalysisRuleSet>..\.sonarlint\uggmcsharp.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,5 +29,9 @@
   <ItemGroup>
     <None Remove="menu_tools_and_files\content\readme.txt" />
     <None Remove="menu_tools_and_files\content\unscrambled.bin" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\.sonarlint\uggm\CSharp\SonarLint.xml" Link="SonarLint.xml" />
   </ItemGroup>
 </Project>
