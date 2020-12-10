@@ -40,9 +40,9 @@
                         <Button x:Name="PcClearButton" Content="Clear" HorizontalAlignment="Right" Margin="0,10,162,0" VerticalAlignment="Top" Click="PcClearButton_Click" Width="57" />
                         <Label Content="SD card root" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="98" />
                         <ComboBox x:Name="SdFolderComboBox" HorizontalAlignment="Left" Margin="120,37,0,0" VerticalAlignment="Top" Width="120" />
-                        <Button x:Name="SaveAsDefaultsButton" Content="Save as defaults" Margin="0,38,449,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" HorizontalAlignment="Right" Width="119" Height="21" />
-                        <Button x:Name="LoadDefaultsPathsButton" Content="Load default paths" Margin="0,37,322,0" VerticalAlignment="Top" Click="LoadAllButton_Click" HorizontalAlignment="Right" Width="122" Height="22"></Button>
-                        <Button x:Name="LoadAllButton" VerticalAlignment="Top" Content="Scan" Margin="496,37,214,0" Click="LoadAllButton_Click" Height="22" />
+                        <Button x:Name="SaveAsDefaultsButton" Content="Save as defaults" Margin="245,38,0,0" VerticalAlignment="Top" Click="SaveAsDefaultsButton_Click" Height="21" HorizontalAlignment="Left" Width="119" />
+                        <Button x:Name="LoadDefaultsPathsButton" Content="Load default paths" Margin="369,37,0,0" VerticalAlignment="Top" Click="LoadAllButton_Click" Height="22" HorizontalAlignment="Left" Width="122"/>
+                        <Button x:Name="LoadAllButton" VerticalAlignment="Top" Content="Scan" Margin="496,37,0,0" Click="LoadAllButton_Click" Height="22" HorizontalAlignment="Left" Width="103" />
                     </Grid>
                 </Expander>
 

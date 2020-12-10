@@ -10,6 +10,7 @@
         public bool MustRemove { get; set; }
         public bool NotMustRemove { get { return !MustRemove; } }
         public bool NotMustCopyAndNotMustShrink { get { return !MustCopy && !MustShrink; } }
+        public long? SdSize { get; set; }
         public string SdFormattedSize { get; set; }
     }
 }

@@ -7,6 +7,7 @@ namespace GDEmuSdCardManager.DTO
     {
         public string FullPath { get; set; }
         public string Path { get; set; }
+        public long? Size { get; set; }
         public string FormattedSize { get; set; }
         public string Hwid { get; set; }
         public string Maker { get; set; }
