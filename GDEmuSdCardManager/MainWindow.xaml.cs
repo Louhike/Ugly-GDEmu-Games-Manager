@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -36,6 +37,8 @@ namespace GDEmuSdCardManager
         private bool HavePathsChangedSinceLastScanSuccessful = true;
         private Version currentVersion;
         private UgdegmConfiguration config;
+        private string orderedBy = "Game";
+        private bool isAscending = true;
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
@@ -58,8 +61,105 @@ namespace GDEmuSdCardManager
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
+            AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
+
+
             Title += " - " + currentVersion;
             CheckUpdate();
+        }
+
+        private void ListView_OnColumnClick(object sender, RoutedEventArgs e)
+        {
+            GridViewColumnHeader columnClicked = e.OriginalSource as GridViewColumnHeader;
+            if (columnClicked == null) return;
+            switch(columnClicked.Column.Header as string)
+            {
+                case "Game":
+                    if (orderedBy == "Game" && isAscending)
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderByDescending(f => f.GameName, new EmptyStringsAreLast());
+                        isAscending = false;
+                        return;
+                    }
+                    else
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderBy(f => f.GameName, new EmptyStringsAreLast());
+                        isAscending = true;
+                    }
+
+                    orderedBy = columnClicked.Column.Header as string;
+                    break;
+                case "Folder":
+                    if (orderedBy == "Folder" && isAscending)
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderByDescending(f => f.Path, new EmptyStringsAreLast());
+                        isAscending = false;
+                        return;
+                    }
+                    else
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderBy(f => f.Path, new EmptyStringsAreLast());
+                        isAscending = true;
+                    }
+
+                    orderedBy = columnClicked.Column.Header as string;
+                    break;
+                case "SD folder":
+                    if (orderedBy == "SD folder" && isAscending)
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderByDescending(f => f.SdFolder, new EmptyStringsAreLast());
+                        isAscending = false;
+                        return;
+                    }
+                    else
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderBy(f => f.SdFolder, new EmptyStringsAreLast());
+                        isAscending = true;
+                    }
+
+                    orderedBy = columnClicked.Column.Header as string;
+                    break;
+                case "Size on PC":
+                    if (orderedBy == "Size on PC" && isAscending)
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderByDescending(f => f.Size);
+                        isAscending = false;
+                        return;
+                    }
+                    else
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderBy(f => f.Size);
+                        isAscending = true;
+                    }
+
+                    orderedBy = columnClicked.Column.Header as string;
+                    break;
+                case "Size on SD":
+                    if (orderedBy == "Size on SD" && isAscending)
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderByDescending(f => f.SdSize);
+                        isAscending = false;
+                        return;
+                    }
+                    else
+                    {
+                        PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                            .Cast<GameOnPc>().OrderBy(f => f.SdSize);
+                        isAscending = true;
+                    }
+
+                    orderedBy = columnClicked.Column.Header as string;
+                    break;
+            }
         }
 
         private void SetupExceptionHandling()
@@ -335,6 +435,7 @@ namespace GDEmuSdCardManager
                     pcViewItem.IsInSdCard = true;
                     pcViewItem.IsInSdCardString = "✓";
                     pcViewItem.SdFolder = gameOnSd.Path;
+                    pcViewItem.SdSize = FileManager.GetDirectorySize(gameOnSd.FullPath);
                     pcViewItem.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
                 }
                 else
@@ -512,4 +613,53 @@ namespace GDEmuSdCardManager
             InfoRichTextBox.ScrollToEnd();
         }
     }
+
+    /// <summary>
+    /// Returns -1 instead of 1 if y is IsNullOrEmpty when x is Not.
+    /// </summary>
+    public class EmptyStringsAreLast : IComparer<string>
+    {
+        public int Compare(string x, string y)
+        {
+            if (String.IsNullOrEmpty(y) && !String.IsNullOrEmpty(x))
+            {
+                return -1;
+            }
+            else if (!String.IsNullOrEmpty(y) && String.IsNullOrEmpty(x))
+            {
+                return 1;
+            }
+            else
+            {
+                return String.Compare(x, y);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Returns -1 instead of 1 if y is IsNullOrEmpty when x is Not.
+    /// </summary>
+    //public class NullValuesAreLast: IComparer<long?>
+    //{
+    //    public int Compare(long? x, long? y)
+    //    {
+    //        if (y == null && x != null)
+    //        {
+    //            return -1;
+    //        }
+    //        else if (y != null && x == null)
+    //        {
+    //            return 1;
+    //        }
+    //        else if (y == null && x == null)
+    //        {
+    //            return 0;
+    //        }
+    //        else
+    //        {
+    //            return ((long)x).CompareTo((long)y);
+    //        }
+    //    }
+    //}
+
 }
