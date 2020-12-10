@@ -16,6 +16,7 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Media;
@@ -31,9 +32,11 @@ namespace GDEmuSdCardManager
         private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
         private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying selected actions...";
         private static readonly string ConfigurationPath = @".\config.json";
+        private static readonly string pathSplitter = @"|";
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
+        private GridLength[] starHeight;
         private Version currentVersion;
         private UgdegmConfiguration config;
 
@@ -58,8 +61,45 @@ namespace GDEmuSdCardManager
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
+            // Initialization for the expanders
+            starHeight = new GridLength[ExpanderGrid.RowDefinitions.Count];
+            starHeight[0] = ExpanderGrid.RowDefinitions[0].Height;
+            starHeight[2] = ExpanderGrid.RowDefinitions[2].Height;
+            ExpandedOrCollapsed(FoldersExpander);
+            ExpandedOrCollapsed(GamesExpander);
+            FoldersExpander.Expanded += ExpandedOrCollapsed;
+            FoldersExpander.Collapsed += ExpandedOrCollapsed;
+            GamesExpander.Expanded += ExpandedOrCollapsed;
+            GamesExpander.Collapsed += ExpandedOrCollapsed;
+
             Title += " - " + currentVersion;
             CheckUpdate();
+        }
+
+        private void ExpandedOrCollapsed(object sender, RoutedEventArgs e)
+        {
+            ExpandedOrCollapsed(sender as Expander);
+        }
+
+        private void ExpandedOrCollapsed(Expander expander)
+        {
+            var rowIndex = Grid.GetRow(expander);
+            var row = ExpanderGrid.RowDefinitions[rowIndex];
+            if (expander.IsExpanded)
+            {
+                row.Height = starHeight[rowIndex];
+                row.MinHeight = 50;
+            }
+            else
+            {
+                starHeight[rowIndex] = row.Height;
+                row.Height = GridLength.Auto;
+                row.MinHeight = 0;
+            }
+
+            var bothExpanded = FoldersExpander.IsExpanded && GamesExpander.IsExpanded;
+            ExpanderGridSplitter.Visibility = bothExpanded ?
+                Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SetupExceptionHandling()
@@ -207,11 +247,16 @@ namespace GDEmuSdCardManager
             SdFolderComboBox.SelectedItem = config.SdDefaultDrive;
         }
 
-        private void PcBrowseButton_Click(object sender, RoutedEventArgs e)
+        private void PcAddButton_Click(object sender, RoutedEventArgs e)
         {
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
-            PcFolderTextBox.Text = browserDialog.SelectedPath;
+            PcFolderTextBox.Text += pathSplitter + browserDialog.SelectedPath;
+        }
+
+        private void PcClearButton_Click(object sender, RoutedEventArgs e)
+        {
+            PcFolderTextBox.Text = string.Empty;
         }
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
@@ -232,27 +277,51 @@ namespace GDEmuSdCardManager
         private void LoadGamesOnPc()
         {
             PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
-            if (!Directory.Exists(PcFolderTextBox.Text))
+
+            if (string.IsNullOrEmpty(PcFolderTextBox.Text))
             {
-                WriteError("PC path is invalid");
+                WriteError("PC path must not be empty");
                 IsScanSuccessful = false;
                 return;
             }
 
-            var subFoldersList = Directory.EnumerateDirectories(PcFolderTextBox.Text);
+            IEnumerable<string> paths = PcFolderTextBox.Text.Split(pathSplitter);
+
+            foreach(string path in paths)
+            {
+                if (!Directory.Exists(path))
+                {
+                    WriteError($"PC path {path} is invalid");
+                    IsScanSuccessful = false;
+                }
+
+            }
+
+            if(!IsScanSuccessful)
+            {
+                return;
+            }
+
+            List<string> subFoldersList = new List<string>();
+            foreach (string path in paths)
+            {
+                subFoldersList.AddRange(Directory.EnumerateDirectories(path));
+
+            }
+
             var subFoldersWithGdiList = new List<GameOnPc>();
 
             foreach (var subFolder in subFoldersList)
             {
                 if (Directory
                     .EnumerateFiles(subFolder)
-                    .Count(f => System.IO.Path.GetExtension(f) == ".gdi") > 1)
+                    .Count(f => Path.GetExtension(f) == ".gdi") > 1)
                 {
                     WriteError($"You have more than one GDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
                     continue;
                 }
 
-                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi");
 
                 if (gdiFile != null)
                 {
@@ -362,7 +431,6 @@ namespace GDEmuSdCardManager
                 if (CreateMenuIndexCheckbox.IsChecked == true)
                 {
                     await MenuManager.CreateIndex(SdFolderComboBox.SelectedItem as string, gamesOnSdCard);
-                    LoadAllButton_Click(null, null);
                 }
                 else
                 {

@@ -1,0 +1,12 @@
+{
+  "ServerUri": "http://localhost:9000",
+  "Organization": null,
+  "ProjectKey": "UGGM",
+  "ProjectName": "UGGM",
+  "Profiles": {
+    "CSharp": {
+      "ProfileKey": "AXY3a3Zajoi-DX6O_6V6",
+      "ProfileTimestamp": "2020-12-06T09:39:18Z"
+    }
+  }
+}
