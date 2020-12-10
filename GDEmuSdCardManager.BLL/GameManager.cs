@@ -65,6 +65,7 @@ namespace GDEmuSdCardManager.BLL
             {
                 FullPath = folderPath,
                 Path = folderPath.Split(Path.DirectorySeparatorChar).Last(),
+                Size = FileManager.GetDirectorySize(folderPath),
                 FormattedSize = FileManager.GetDirectoryFormattedSize(folderPath)
             };
 
