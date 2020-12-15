@@ -16,7 +16,7 @@ It allows you to:
 It also shows the free space on your SD card and the size of your games.
 
 ## What will change in future version 0.7.0
-* Option to sort games alphabetically on SD card.
+* Option to sort games alphabetically on SD card. => already done in 0.6.4
 * Handle CDI games.
 * Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
 * Allows game renaming
