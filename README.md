@@ -7,12 +7,13 @@ UGGM is a Windows (for now) software to manage your games on the SD card you hav
 ## Where can I download it?
 Here: https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases
 
+## Features
 It allows you to:
 * Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
 * Remove Games from your SD card.
 * Show which games on your PC are not on your SD card.
-* Create a game index
+* Generate a menu for GDEmu
 * Files with stranges track names will be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
 * GDI file are rewritten while copied on the SD card to improve compatibility.
 
