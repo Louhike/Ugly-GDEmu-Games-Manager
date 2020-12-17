@@ -4,6 +4,9 @@
 ## What is Ugly GDEmu Games Manager
 UGGM is a Windows (for now) software to manage your games on the SD card you have for GDEmu, as it can be cumbersome.
 
+## Where can I download it?
+Here: https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases
+
 It allows you to:
 * Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
