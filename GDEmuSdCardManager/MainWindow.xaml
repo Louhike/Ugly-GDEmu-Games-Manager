@@ -62,27 +62,27 @@
                         <ListView x:Name="PcFoldersWithGdiListView" Margin="0,0,0,37">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn DisplayMemberBinding=
+                                    <GridViewColumn x:Name="GameNameColumn" DisplayMemberBinding=
                                     "{Binding Path=GameName}"
-                                    Header="Game" Width="140" />
+                                    Header="Game ▲" Width="140" />
                                     <GridViewColumn DisplayMemberBinding=
                                     "{Binding Path=FormattedDiscNumber}"
                                     Header="Disc" Width="30" />
-                                    <GridViewColumn DisplayMemberBinding=
+                                    <GridViewColumn x:Name="PathColumn" DisplayMemberBinding=
                                     "{Binding Path=Path}"
-                                    Header="Folder" Width="200" />
-                                    <GridViewColumn DisplayMemberBinding=
+                                    Header="Folder ▬" Width="200" />
+                                    <GridViewColumn x:Name="FormattedSizeColumn" DisplayMemberBinding=
                                     "{Binding Path=FormattedSize}"
-                                    Header="Size on PC" Width="65" />
-                                    <GridViewColumn DisplayMemberBinding=
+                                    Header="Size on PC ▬" Width="75" />
+                                    <GridViewColumn x:Name="SdSizeColumn" DisplayMemberBinding=
                                     "{Binding Path=SdFormattedSize}"
-                                    Header="Size on SD" Width="65" />
+                                    Header="Size on SD ▬" Width="75" />
                                     <GridViewColumn DisplayMemberBinding=
                                     "{Binding Path=IsInSdCardString}"
                                     Header="In SD?" Width="40" />
-                                    <GridViewColumn DisplayMemberBinding=
+                                    <GridViewColumn x:Name="SdFolderColumn" DisplayMemberBinding=
                                     "{Binding Path=SdFolder}"
-                                    Header="SD folder" Width="55" />
+                                    Header="SD folder ▬" Width="65" />
                                     <GridViewColumn
                                     Header="Copy?" Width="50">
                                         <GridViewColumn.CellTemplate>
