@@ -24,7 +24,7 @@ First, you must define the source(s) of your games on your PC. You must select f
 
 When it's done, click on Scan. It will analyze all the folders and display the games it find on your PC. If the game is also on your SD, it will display the corresponding folder.
 
-In the list, there is for each line, three actions. Copy (to SD), Remove (from SD) and Shrink (the game while copying on SD). Check the actions you want to apply, and then click on "Apply selected actions".
+In the games list, there is three actions for each line. Copy (to SD), Remove (from SD) and Shrink (the game while copying on SD). Check the actions you want to apply, and then click on "Apply selected actions".
 
 By default, the option "Create menu index" is selected as most users would want that, you can untick though.
 
