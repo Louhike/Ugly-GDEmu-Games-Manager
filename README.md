@@ -12,7 +12,7 @@ It allows you to:
 * Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
 * Remove Games from your SD card.
-* Show which games on your PC are not on your SD card.
+* Show which games on your PC are not on your SD card. The list is sortable on columns with symbols (▲, ▼ and ▬).
 * Generate a menu for GDEmu
 * Files with stranges track names will be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
 * GDI file are rewritten while copied on the SD card to improve compatibility.
@@ -20,8 +20,7 @@ It allows you to:
 It also shows the free space on your SD card and the size of your games.
 
 ## What will change in future version 0.7.0
-* Option to sort games alphabetically on SD card. => already done in 0.6.3
-* Handle CDI games.
+* Handle ISO and CDI games.
 * Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
 * Allows game renaming
 * Add an option to force VGA
