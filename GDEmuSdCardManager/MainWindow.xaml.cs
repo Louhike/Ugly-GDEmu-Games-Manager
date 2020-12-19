@@ -343,7 +343,12 @@ namespace GDEmuSdCardManager
         {
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
-            PcFolderTextBox.Text += pathSplitter + browserDialog.SelectedPath;
+            if(!string.IsNullOrEmpty(PcFolderTextBox.Text))
+            {
+                PcFolderTextBox.Text += pathSplitter;
+            }
+
+            PcFolderTextBox.Text += browserDialog.SelectedPath;
         }
 
         private void PcClearButton_Click(object sender, RoutedEventArgs e)
