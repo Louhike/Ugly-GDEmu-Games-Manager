@@ -38,8 +38,8 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var subFolder in subFoldersList)
             {
-                var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
-                if (gdiFile != null)
+                var imageFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
+                if (imageFile != null)
                 {
                     try
                     {
@@ -128,7 +128,7 @@ namespace GDEmuSdCardManager.BLL
                 //}
 
                 var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
-                if(gdiPath == null)
+                if (gdiPath == null)
                 {
                     throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
                 }
@@ -141,11 +141,19 @@ namespace GDEmuSdCardManager.BLL
             {
                 await FileManager.CopyDirectoryContentToAnother(game.FullPath, destinationFolder, true);
 
-                var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
-                var newGdi = GameManager.GetGdiFromFile(gdiPath);
-                File.Delete(gdiPath);
-                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
-                newGdi.RenameTrackFiles(destinationFolder);
+                if (game.IsGdi)
+                {
+                    var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
+                    var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                    File.Delete(gdiPath);
+                    newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                    newGdi.RenameTrackFiles(destinationFolder);
+                }
+                else // CDI
+                {
+                    var cdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".cdi");
+                    File.Move(cdiPath, Path.Combine(destinationFolder, "disc.cdi"));
+                }
             }
         }
 
