@@ -76,7 +76,6 @@ namespace GDEmuSdCardManager
 
             AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
 
-
             Title += " - " + currentVersion;
             CheckUpdate();
         }
@@ -95,6 +94,7 @@ namespace GDEmuSdCardManager
                     RenameSortableColumnToDefault(SdSizeColumn);
                     RenameSortableColumnToDefault(SdFolderColumn);
                     break;
+
                 case "Folder":
                     SortByStringColumn(columnClicked, columnName, g => g.Path);
                     RenameSortableColumnToDefault(GameNameColumn);
@@ -102,6 +102,7 @@ namespace GDEmuSdCardManager
                     RenameSortableColumnToDefault(SdSizeColumn);
                     RenameSortableColumnToDefault(SdFolderColumn);
                     break;
+
                 case "SD folder":
                     SortByStringColumn(columnClicked, columnName, g => g.SdFolder);
                     RenameSortableColumnToDefault(PathColumn);
@@ -109,6 +110,7 @@ namespace GDEmuSdCardManager
                     RenameSortableColumnToDefault(FormattedSizeColumn);
                     RenameSortableColumnToDefault(SdSizeColumn);
                     break;
+
                 case "Size on PC":
                     SortByNullableLongColumn(columnClicked, columnName, g => g.Size);
                     RenameSortableColumnToDefault(PathColumn);
@@ -116,6 +118,7 @@ namespace GDEmuSdCardManager
                     RenameSortableColumnToDefault(SdSizeColumn);
                     RenameSortableColumnToDefault(SdFolderColumn);
                     break;
+
                 case "Size on SD":
                     SortByNullableLongColumn(columnClicked, columnName, g => g.SdSize);
                     RenameSortableColumnToDefault(PathColumn);
@@ -294,10 +297,6 @@ namespace GDEmuSdCardManager
             {
                 Process.Start("open", url);
             }
-            //else
-            //{
-            //    ...
-            //}
         }
 
         private void OnFolderOrDriveChanged(object sender, RoutedEventArgs e)
@@ -380,17 +379,16 @@ namespace GDEmuSdCardManager
 
             IEnumerable<string> paths = PcFolderTextBox.Text.Split(pathSplitter);
 
-            foreach(string path in paths)
+            foreach (string path in paths)
             {
                 if (!Directory.Exists(path))
                 {
                     WriteError($"PC path {path} is invalid");
                     IsScanSuccessful = false;
                 }
-
             }
 
-            if(!IsScanSuccessful)
+            if (!IsScanSuccessful)
             {
                 return;
             }
@@ -399,7 +397,6 @@ namespace GDEmuSdCardManager
             foreach (string path in paths)
             {
                 subFoldersList.AddRange(Directory.EnumerateDirectories(path));
-
             }
 
             var subFoldersWithGdiList = new List<GameOnPc>();
@@ -408,13 +405,13 @@ namespace GDEmuSdCardManager
             {
                 if (Directory
                     .EnumerateFiles(subFolder)
-                    .Count(f => Path.GetExtension(f) == ".gdi") > 1)
+                    .Count(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi") > 1)
                 {
-                    WriteError($"You have more than one GDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
+                    WriteError($"You have more than one GDI/CDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
                     continue;
                 }
 
-                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi");
+                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
 
                 if (gdiFile != null)
                 {
@@ -491,7 +488,7 @@ namespace GDEmuSdCardManager
 
             foreach (GameOnPc pcViewItem in pcItemsSource)
             {
-                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc))
+                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc && f.IsGdi == pcViewItem.IsGdi))
                 {
                     var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc);
                     pcViewItem.IsInSdCard = true;
@@ -736,7 +733,6 @@ namespace GDEmuSdCardManager
         }
     }
 
-
     public class NullValuesAreLastDescending : IComparer<long?>
     {
         public int Compare(long? x, long? y)
@@ -759,5 +755,4 @@ namespace GDEmuSdCardManager
             }
         }
     }
-
 }

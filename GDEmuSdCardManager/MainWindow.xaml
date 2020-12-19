@@ -133,6 +133,9 @@
                                                                 <DataTrigger Binding="{Binding MustCopy}" Value="False">
                                                                     <Setter Property="IsEnabled" Value="False" />
                                                                 </DataTrigger>
+                                                                <DataTrigger Binding="{Binding IsGdi}" Value="False">
+                                                                    <Setter Property="Visibility" Value="Hidden" />
+                                                                </DataTrigger>
                                                             </Style.Triggers>
                                                         </Style>
                                                     </CheckBox.Style>
@@ -145,7 +148,7 @@
                         </ListView>
 
                         <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply selected actions" Margin="0,0,0,0" Click="ApplySelectedActions" HorizontalAlignment="Left" Width="150" Height="30" VerticalAlignment="Bottom" />
-                        <CheckBox x:Name="CreateMenuIndexCheckbox" Content="Create menu index" Margin="171,0,0,7" HorizontalAlignment="Left" Width="120" Height="15" VerticalAlignment="Bottom" />
+                        <CheckBox x:Name="CreateMenuIndexCheckbox" IsChecked="True" Content="Create menu index" Margin="171,0,0,7" HorizontalAlignment="Left" Width="120" Height="15" VerticalAlignment="Bottom" />
                     </Grid>
                 </Expander>
             </Grid>

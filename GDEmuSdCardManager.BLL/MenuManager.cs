@@ -12,7 +12,7 @@ namespace GDEmuSdCardManager.BLL
     {
         public async static Task CreateIndex(string destinationFolder, IEnumerable<GameOnSd> gamesToIndex)
         {
-            if(!Directory.Exists(Path.Combine(destinationFolder, @"01\disc.cdi")))
+            if (!Directory.Exists(Path.Combine(destinationFolder, @"01\disc.cdi")))
             {
                 Directory.CreateDirectory(Path.Combine(destinationFolder, @"01"));
             }
@@ -21,7 +21,7 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
             {
-                if(Directory.Exists(folder + "_") && !Directory.EnumerateFileSystemEntries(folder + "_").Any())
+                if (Directory.Exists(folder + "_") && !Directory.EnumerateFileSystemEntries(folder + "_").Any())
                 {
                     Directory.Delete(folder + "_");
                 }
@@ -45,9 +45,9 @@ namespace GDEmuSdCardManager.BLL
 
                 await FileManager.CopyDirectoryContentToAnother(@".\menu_tools_and_files\content", tempPath, false);
 
-                for (short i = 2; i <= gamesToIndex.Count() + 1; i++)
+                for (short i = 2; i <= gamesToIndex.Count(g => g.GameName != "GDMENU") + 1; i++)
                 {
-                    var game = gamesToIndex.OrderBy(g => g.GameName).ElementAt(i - 2);
+                    var game = gamesToIndex.Where(g => g.GameName != "GDMENU").OrderBy(g => g.GameName).ElementAt(i - 2);
                     string index = i.ToString(SdCardManager.GetGdemuFolderNameFromIndex(i));
 
                     File.AppendAllText(tempListIniPath, Environment.NewLine);
@@ -82,13 +82,13 @@ namespace GDEmuSdCardManager.BLL
                 throw;
             }
 
-            for(int i = 0; i <= 2; i++ )
+            for (int i = 0; i <= 2; i++)
             {
                 File.AppendAllText(tempListIniPath, Environment.NewLine);
             }
 
             await Command
-                    .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G",  @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
+                    .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G", @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
                     .Task;
 
             await Command
