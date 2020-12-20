@@ -13,6 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,8 +30,8 @@ namespace GDEmuSdCardManager
     public partial class MainWindow : Window
     {
         private static readonly ILog logger = LogManager.GetLogger(typeof(MainWindow));
-        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
-        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying selected actions...";
+        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply";
+        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying ";
         private static readonly string ConfigurationPath = @".\config.json";
         private static readonly string pathSplitter = @"|";
         private bool IsSdCardMounted = false;
@@ -52,32 +53,35 @@ namespace GDEmuSdCardManager
             gamesOnSdCard = new List<GameOnSd>();
 
             currentVersion = new Version(File.ReadAllText(@".\VERSION"));
-            config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
-
-            LoadDefaultPaths();
 
             DriveInfo[] allDrives = DriveInfo.GetDrives();
             SdFolderComboBox.ItemsSource = allDrives.Select(d => d.Name);
+
+            config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
+            LoadDefaultPaths();
 
             PcFolderTextBox.TextChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
             // Initialization for the expanders
-            starHeight = new GridLength[ExpanderGrid.RowDefinitions.Count];
-            starHeight[0] = ExpanderGrid.RowDefinitions[0].Height;
-            starHeight[2] = ExpanderGrid.RowDefinitions[2].Height;
-            ExpandedOrCollapsed(FoldersExpander);
-            ExpandedOrCollapsed(GamesExpander);
-            FoldersExpander.Expanded += ExpandedOrCollapsed;
-            FoldersExpander.Collapsed += ExpandedOrCollapsed;
-            GamesExpander.Expanded += ExpandedOrCollapsed;
-            GamesExpander.Collapsed += ExpandedOrCollapsed;
+            starHeight = new GridLength[GamesExpanderGrid.RowDefinitions.Count];
+            starHeight[0] = GamesExpanderGrid.RowDefinitions[0].Height;
+            starHeight[2] = GamesExpanderGrid.RowDefinitions[2].Height;
+            ExpandedOrCollapsedRow(FoldersExpander);
+            ExpandedOrCollapsedRow(GamesExpander);
+            FoldersExpander.Expanded += ExpandedOrCollapsedRow;
+            FoldersExpander.Collapsed += ExpandedOrCollapsedRow;
+            GamesExpander.Expanded += ExpandedOrCollapsedRow;
+            GamesExpander.Collapsed += ExpandedOrCollapsedRow;            
 
             AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
 
             Title += " - " + currentVersion;
             CheckUpdate();
+
+            ScanFolders();
+            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
         }
 
         private void ListView_OnColumnClick(object sender, RoutedEventArgs e)
@@ -172,15 +176,15 @@ namespace GDEmuSdCardManager
             column.Header = (column.Header as string)[0..^2] + " ▬";
         }
 
-        private void ExpandedOrCollapsed(object sender, RoutedEventArgs e)
+        private void ExpandedOrCollapsedRow(object sender, RoutedEventArgs e)
         {
-            ExpandedOrCollapsed(sender as Expander);
+            ExpandedOrCollapsedRow(sender as Expander);
         }
 
-        private void ExpandedOrCollapsed(Expander expander)
+        private void ExpandedOrCollapsedRow(Expander expander)
         {
             var rowIndex = Grid.GetRow(expander);
-            var row = ExpanderGrid.RowDefinitions[rowIndex];
+            var row = GamesExpanderGrid.RowDefinitions[rowIndex];
             if (expander.IsExpanded)
             {
                 row.Height = starHeight[rowIndex];
@@ -194,7 +198,7 @@ namespace GDEmuSdCardManager
             }
 
             var bothExpanded = FoldersExpander.IsExpanded && GamesExpander.IsExpanded;
-            ExpanderGridSplitter.Visibility = bothExpanded ?
+            GamesExpanderGridSplitter.Visibility = bothExpanded ?
                 Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -305,8 +309,10 @@ namespace GDEmuSdCardManager
             {
                 ApplySelectedActionsButton.IsEnabled = false;
                 HavePathsChangedSinceLastScanSuccessful = true;
-                WriteInfo("You have changed a path. You must rescan the folders");
             }
+
+
+            SavePathsAsDefaults();
         }
 
         private void OnDriveChanged(object sender, RoutedEventArgs e)
@@ -351,16 +357,24 @@ namespace GDEmuSdCardManager
             PcFolderTextBox.Text += browserDialog.SelectedPath;
         }
 
-        private void PcClearButton_Click(object sender, RoutedEventArgs e)
-        {
-            PcFolderTextBox.Text = string.Empty;
-        }
-
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
         {
             ScanFolders();
             ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
             HavePathsChangedSinceLastScanSuccessful = false;
+        }
+
+        private void HelpButton_Click(object sender, RoutedEventArgs e)
+        {
+            string messageBoxText = "If you have an error or do not understand something, you can leave an issue at the Github page. Do you want to open the page in your browser?";
+            string caption = "Need help?";
+            MessageBoxButton button = MessageBoxButton.YesNo;
+            MessageBoxImage icon = MessageBoxImage.Question;
+            MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                OpenBrowser(config.IssuesUrl);
+            }
         }
 
         private void ScanFolders()
@@ -478,7 +492,7 @@ namespace GDEmuSdCardManager
             }
 
             long freeSpace = sdCardManager.GetFreeSpace();
-            SdSpaceLabel.Content = FileManager.FormatSize(freeSpace);
+            SdSpaceLabel.Content = FileManager.FormatSize(freeSpace) + " free";
 
             WriteSuccess("Games on SD scanned");
         }
@@ -497,6 +511,7 @@ namespace GDEmuSdCardManager
                 {
                     var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc);
                     pcViewItem.IsInSdCard = true;
+                    pcViewItem.MustBeOnSd = true;
                     pcViewItem.IsInSdCardString = "✓";
                     pcViewItem.SdFolder = gameOnSd.Path;
                     pcViewItem.SdSize = FileManager.GetDirectorySize(gameOnSd.FullPath);
@@ -505,6 +520,7 @@ namespace GDEmuSdCardManager
                 else
                 {
                     pcViewItem.IsInSdCard = false;
+                    pcViewItem.MustBeOnSd = false;
                     pcViewItem.IsInSdCardString = "🚫";
                 }
             }
@@ -550,7 +566,10 @@ namespace GDEmuSdCardManager
         {
             var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
 
-            var gamesToCopy = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().Where(i => i.MustCopy);
+            var gamesToCopy = PcFoldersWithGdiListView.Items
+                .Cast<GameOnPc>()
+                .Where(i => i.MustBeOnSd && (!i.IsInSdCard || i.MustShrink));
+
             WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
 
             CopyProgressLabel.Visibility = Visibility.Visible;
@@ -620,7 +639,7 @@ namespace GDEmuSdCardManager
                 var gamesToRemove = PcFoldersWithGdiListView
                     .Items
                     .Cast<GameOnPc>()
-                    .Where(g => g.MustRemove && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
+                    .Where(g => !g.MustBeOnSd && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
                 WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
                 foreach (GameOnPc itemToRemove in gamesToRemove)
                 {
@@ -639,16 +658,11 @@ namespace GDEmuSdCardManager
             }
         }
 
-        private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
+        private void SavePathsAsDefaults()
         {
             config.PcDefaultPath = PcFolderTextBox.Text;
             config.SdDefaultDrive = SdFolderComboBox.SelectedItem as string;
             config.Save(ConfigurationPath);
-        }
-
-        private void LoadDefaultsPathsButton_Click(object sender, RoutedEventArgs e)
-        {
-            LoadDefaultPaths();
         }
 
         private void WriteError(string message)
@@ -673,7 +687,24 @@ namespace GDEmuSdCardManager
                 Foreground = color
             };
             InfoRichTextBox.Document.Blocks.Add(error);
+            InfoRichTextBox.Focus();
+            InfoRichTextBox.CaretPosition = InfoRichTextBox.CaretPosition.DocumentEnd;
             InfoRichTextBox.ScrollToEnd();
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            var logsWindow = new LogsWindow(GetRtfStringFromRichTextBox(InfoRichTextBox));
+            logsWindow.Show();
+        }
+
+        public string GetRtfStringFromRichTextBox(RichTextBox richTextBox)
+        {
+            TextRange textRange = new TextRange(richTextBox.Document.ContentStart, richTextBox.Document.ContentEnd);
+            MemoryStream ms = new MemoryStream();
+            textRange.Save(ms, DataFormats.Rtf);
+
+            return Encoding.Default.GetString(ms.ToArray());
         }
     }
 
