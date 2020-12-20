@@ -9,7 +9,7 @@ Here: https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases
 
 ## Features
 It allows you to:
-* Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
+* Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it. ONLY GDI IS SUPPORTED FOR NOW. CDI support is coming (it's done but I'm doing some testing).
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
 * Remove Games from your SD card.
 * Show which games on your PC are not on your SD card. The list is sortable on columns with symbols (▲, ▼ and ▬).
