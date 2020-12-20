@@ -415,7 +415,15 @@ namespace GDEmuSdCardManager
             List<string> subFoldersList = new List<string>();
             foreach (string path in paths)
             {
-                subFoldersList.AddRange(Directory.EnumerateDirectories(path));
+                subFoldersList.AddRange(Directory.EnumerateDirectories(
+                    path,
+                    "*",
+                    new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = true,
+                        ReturnSpecialDirectories = false
+                    }));
             }
 
             var subFoldersWithGdiList = new List<GameOnPc>();
@@ -423,14 +431,31 @@ namespace GDEmuSdCardManager
             foreach (var subFolder in subFoldersList)
             {
                 if (Directory
-                    .EnumerateFiles(subFolder)
+                    .EnumerateFiles(
+                    subFolder,
+                    "*",
+                    new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = false,
+                        ReturnSpecialDirectories = false
+                    })
                     .Count(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi") > 1)
                 {
                     WriteError($"You have more than one GDI/CDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
                     continue;
                 }
 
-                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
+                var gdiFile = Directory.EnumerateFiles(
+                    subFolder,
+                    "*",
+                    new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = false,
+                        ReturnSpecialDirectories = false
+                    })
+                    .FirstOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
 
                 if (gdiFile != null)
                 {
@@ -445,7 +470,10 @@ namespace GDEmuSdCardManager
                         continue;
                     }
 
-                    subFoldersWithGdiList.Add(game);
+                    if(!subFoldersWithGdiList.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
+                    {
+                        subFoldersWithGdiList.Add(game);
+                    }
                 }
             }
 
