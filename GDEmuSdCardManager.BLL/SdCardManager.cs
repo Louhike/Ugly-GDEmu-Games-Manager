@@ -16,6 +16,8 @@ namespace GDEmuSdCardManager.BLL
     {
         public string DrivePath { get; set; }
 
+        private string tempPath = @".\temp_uncompressed\";
+
         public SdCardManager(string path)
         {
             DrivePath = path;
@@ -165,13 +167,13 @@ namespace GDEmuSdCardManager.BLL
                     File.Move(cdiPath, Path.Combine(destinationFolder, "disc.cdi"));
                 }
             }
+
+            FileManager.RemoveAllFilesInDirectory(tempPath);
         }
 
-        private static string ExtractArchive(GameOnPc game)
+        private string ExtractArchive(GameOnPc game)
         {
-            string oldGdiPath;
-            var tempPath = @".\temp_uncompressed\";
-            oldGdiPath = tempPath;
+            string oldGdiPath = tempPath;
             var archive = ArchiveFactory.Open(game.FullPath);
             var gpiEntry = archive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi") || e.Key.EndsWith(".cdi"));
             var separator = "/";
