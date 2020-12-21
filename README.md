@@ -46,4 +46,4 @@ Thanks to Fed (https://github.com/PapiFed) for helping testing the software and 
 GNU General Public License v2.0
 
 ## If you want to support the developper
-__I don't need it__ but if you would like to help pay my coffee/beer while I'm working on this, you can donate here: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GU9TN9WV3PMHA&currency_code=EUR&source=url)
+__I don't need it__ but if you would like to help me pay my coffee/beer while I'm working on this, you can donate here: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GU9TN9WV3PMHA&currency_code=EUR&source=url)
