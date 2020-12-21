@@ -89,6 +89,13 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
+            string oldImagePath = game.FullPath;
+            //string oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
+
+            if (game.IsCompressed)
+            {
+                oldImagePath = ExtractArchive(game);
+            }
 
             if (game.MustShrink)
             {
@@ -101,57 +108,6 @@ namespace GDEmuSdCardManager.BLL
                     Directory.CreateDirectory(destinationFolder);
                 }
 
-                string oldGdiPath;
-                var tempPath = @".\temp_uncompressed\";
-                if (game.IsCompressed)
-                {
-                    oldGdiPath = tempPath;
-                    if (game.Is7z)
-                    {
-                        var sevenZipArchive = SevenZipArchive.Open(game.FullPath);
-                        var gpiEntry = sevenZipArchive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi"));
-                        var separator = "/";
-                        var pathParts = gpiEntry.Key.Split(separator);
-                        List<SevenZipArchiveEntry> entriesToExtract = new List<SevenZipArchiveEntry>();
-                        if (pathParts.Count() > 1)
-                        {
-                            string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
-                            entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
-                        }
-                        else
-                        {
-                            entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
-                        }
-
-                        if(!Directory.Exists(tempPath))
-                        {
-                            Directory.CreateDirectory(tempPath);
-                        }
-
-                        foreach (var entry in entriesToExtract)
-                        {
-                            var fileName = entry.Key.Split(separator).Last();
-                            using (var entryStream = entry.OpenEntryStream())
-                            {
-                                using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
-                                {
-                                    entryStream.CopyTo(destinationFileStream);
-                                    //while (entryStream.Position < entryStream.Length)
-                                    //{
-                                    //    destinationFileStream.WriteByte((byte)entryStream.ReadByte());
-                                    //}
-                                }
-                            }
-                        }
-
-                        oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
-                    }
-                }
-                else
-                {
-                    oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
-                }
-
                 //var commandResult = await Command
                 //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
                 //    .Task;
@@ -161,7 +117,7 @@ namespace GDEmuSdCardManager.BLL
                 Command command = null;
                 try
                 {
-                    command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder);
+                    command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldImagePath, destinationFolder);
                     await command.Task.WaitOrCancel(cts.Token);
                 }
                 catch (OperationCanceledException ex)
@@ -192,7 +148,7 @@ namespace GDEmuSdCardManager.BLL
             }
             else
             {
-                await FileManager.CopyDirectoryContentToAnother(game.FullPath, destinationFolder, true);
+                await FileManager.CopyDirectoryContentToAnother(new FileInfo(oldImagePath).Directory.FullName, destinationFolder, true);
 
                 if (game.IsGdi)
                 {
@@ -208,6 +164,51 @@ namespace GDEmuSdCardManager.BLL
                     File.Move(cdiPath, Path.Combine(destinationFolder, "disc.cdi"));
                 }
             }
+        }
+
+        private static string ExtractArchive(GameOnPc game)
+        {
+            string oldGdiPath;
+            var tempPath = @".\temp_uncompressed\";
+            oldGdiPath = tempPath;
+            if (game.Is7z)
+            {
+                var sevenZipArchive = SevenZipArchive.Open(game.FullPath);
+                var gpiEntry = sevenZipArchive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi"));
+                var separator = "/";
+                var pathParts = gpiEntry.Key.Split(separator);
+                List<SevenZipArchiveEntry> entriesToExtract = new List<SevenZipArchiveEntry>();
+                if (pathParts.Count() > 1)
+                {
+                    string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
+                    entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
+                }
+                else
+                {
+                    entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
+                }
+
+                if (!Directory.Exists(tempPath))
+                {
+                    Directory.CreateDirectory(tempPath);
+                }
+
+                foreach (var entry in entriesToExtract)
+                {
+                    var fileName = entry.Key.Split(separator).Last();
+                    using (var entryStream = entry.OpenEntryStream())
+                    {
+                        using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
+                        {
+                            entryStream.CopyTo(destinationFileStream);
+                        }
+                    }
+                }
+
+                oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
+            }
+
+            return oldGdiPath;
         }
 
         public static string GetGdemuFolderNameFromIndex(short index)

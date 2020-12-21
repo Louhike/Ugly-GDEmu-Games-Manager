@@ -74,7 +74,7 @@
                                     Header="Disc" Width="30" />
                                     <GridViewColumn x:Name="PathColumn" DisplayMemberBinding=
                                     "{Binding Path=Path}"
-                                    Header="Folder ▬" Width="200" />
+                                    Header="Folder/Archive ▬" Width="200" />
                                     <GridViewColumn x:Name="FormattedSizeColumn" DisplayMemberBinding=
                                     "{Binding Path=FormattedSize}"
                                     Header="Size on PC ▬" Width="75" />
