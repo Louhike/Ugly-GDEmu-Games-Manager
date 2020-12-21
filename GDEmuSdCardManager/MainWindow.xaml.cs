@@ -5,6 +5,8 @@ using log4net.Appender;
 using log4net.Layout;
 using log4net.Repository.Hierarchy;
 using Ookii.Dialogs.Wpf;
+using SharpCompress.Archives.SevenZip;
+using SharpCompress.Readers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -412,10 +414,11 @@ namespace GDEmuSdCardManager
                 return;
             }
 
-            List<string> subFoldersList = new List<string>();
+            List<string> subFolders = new List<string>();
+            List<string> compressedFiles = new List<string>();
             foreach (string path in paths)
             {
-                subFoldersList.AddRange(Directory.EnumerateDirectories(
+                subFolders.AddRange(Directory.EnumerateDirectories(
                     path,
                     "*",
                     new EnumerationOptions
@@ -424,11 +427,26 @@ namespace GDEmuSdCardManager
                         RecurseSubdirectories = true,
                         ReturnSpecialDirectories = false
                     }));
+                compressedFiles.AddRange(Directory.EnumerateFiles(
+                    path,
+                    "*",
+                     new EnumerationOptions
+                     {
+                         IgnoreInaccessible = true,
+                         RecurseSubdirectories = true,
+                         ReturnSpecialDirectories = false
+                     }).Where(p => p.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".7z", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".rar", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".bz", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".bz2", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".gz", StringComparison.InvariantCultureIgnoreCase)
+                     || p.EndsWith(".lz", StringComparison.InvariantCultureIgnoreCase)));
             }
 
-            var subFoldersWithGdiList = new List<GameOnPc>();
+            var games = new List<GameOnPc>();
 
-            foreach (var subFolder in subFoldersList)
+            foreach (var subFolder in subFolders)
             {
                 if (Directory
                     .EnumerateFiles(
@@ -470,14 +488,60 @@ namespace GDEmuSdCardManager
                         continue;
                     }
 
-                    if(!subFoldersWithGdiList.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
+                    if(!games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
                     {
-                        subFoldersWithGdiList.Add(game);
+                        games.Add(game);
                     }
                 }
             }
 
-            PcFoldersWithGdiListView.ItemsSource = subFoldersWithGdiList.OrderBy(f => f.GameName);
+            foreach(var compressedFile in compressedFiles)
+            {
+                if(SevenZipArchive.IsSevenZipFile(compressedFile))
+                {
+                    var sevenZipArchive = SevenZipArchive.Open(compressedFile);
+                    //sevenZipArchive.Entries.FirstOrDefault(e => e.Key);
+                    if(sevenZipArchive.Entries.Any(e =>
+                        e.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+                        GameOnPc game;
+
+                        try
+                        {
+                            game = GameManager.ExtractPcGameDataFrom7ZipArchive(compressedFile, sevenZipArchive);
+                        }
+                        catch (Exception error)
+                        {
+                            WriteError(error.Message);
+                            continue;
+                        }
+
+                        if (!games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
+                        {
+                            games.Add(game);
+                        }
+                    }
+                    else if (sevenZipArchive.Entries.Any(e => e.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase)))
+                    {
+
+                    }
+
+                    continue;
+                }
+                using (Stream stream = File.OpenRead(compressedFile))
+                using (var reader = ReaderFactory.Open(stream))
+                {
+                    while (reader.MoveToNextEntry())
+                    {
+                        if (!reader.Entry.IsDirectory)
+                        {
+                            Console.WriteLine(reader.Entry.Key);
+                        }
+                    }
+                }
+            }
+
+            PcFoldersWithGdiListView.ItemsSource = games.OrderBy(f => f.GameName);
             WriteSuccess("Games on PC scanned");
         }
 

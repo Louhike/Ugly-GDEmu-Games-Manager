@@ -2,6 +2,7 @@
 using GDEmuSdCardManager.DTO;
 using GDEmuSdCardManager.DTO.CDI;
 using GDEmuSdCardManager.DTO.GDI;
+using SharpCompress.Archives.SevenZip;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -16,6 +17,18 @@ namespace GDEmuSdCardManager.BLL
         public static GameOnPc ExtractPcGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
+            return ConvertBaseGameToGameOnPc(game);
+        }
+
+        public static GameOnPc ExtractPcGameDataFrom7ZipArchive(string archivePath, SevenZipArchive archive)
+        {
+            var game = ConvertBaseGameToGameOnPc(ExtractGameDataFrom7ZipArchive(archivePath, archive));
+            game.IsCompressed = true;
+            return ConvertBaseGameToGameOnPc(game);
+        }
+
+        private static GameOnPc ConvertBaseGameToGameOnPc(BaseGame game)
+        {
             return new GameOnPc
             {
                 BootFile = game.BootFile,
@@ -137,7 +150,7 @@ namespace GDEmuSdCardManager.BLL
             return game;
         }
 
-        private static void ReadGameInfoFromBinaryData(BaseGame game, FileStream fs)
+        private static void ReadGameInfoFromBinaryData(BaseGame game, Stream fs)
         {
             byte[] hwidBuffer = new byte[16];
             fs.Read(hwidBuffer, 0, 16);
@@ -202,7 +215,13 @@ namespace GDEmuSdCardManager.BLL
 
         public static Gdi GetGdiFromFile(string path)
         {
-            var gdiContent = File.ReadAllLines(path)
+            var gdiContent = File.ReadAllLines(path);
+            return GetGdiFromStringContent(gdiContent);
+        }
+
+        public static Gdi GetGdiFromStringContent(IEnumerable<string> gdiContent)
+        {
+            gdiContent = gdiContent
                 .Where(l => !string.IsNullOrEmpty(l))
                 .Select(l => l.RemoveSpacesInSuccession());
 
@@ -413,6 +432,65 @@ namespace GDEmuSdCardManager.BLL
             }
 
             return cdi;
+        }
+
+        private static BaseGame ExtractGameDataFrom7ZipArchive(string archivePath, SevenZipArchive archive)
+        {
+            var archiveFileInfo = new FileInfo(archivePath);
+            var game = new BaseGame
+            {
+                FullPath = archivePath,
+                Path = archivePath.Split(Path.DirectorySeparatorChar).Last(),
+                Size = archiveFileInfo.Length,
+                FormattedSize = FileManager.FormatSize(archiveFileInfo.Length)
+            };
+
+            var gdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase));
+            if(gdiEntry != null)
+            {
+                using (var stream = gdiEntry.OpenEntryStream())
+                using (var ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    var gdiContentInSingleLine = Encoding.UTF8.GetString(ms.ToArray());
+                    var gdiContent = new List<string>(
+                           gdiContentInSingleLine.Split(new string[] { "\r\n", "\n" },
+                           StringSplitOptions.RemoveEmptyEntries));
+
+                    game.GdiInfo = GetGdiFromStringContent(gdiContent);
+                    game.IsGdi = true;
+                    var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
+                    if (track3.Lba != 45000)
+                    {
+                        throw new Exception("Bad track03.bin LBA");
+                    }
+
+                    bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
+
+                    var track3Entry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(track3.FileName));
+                    using (var track3Stream = track3Entry.OpenEntryStream())
+                    {
+                        if (isRawMode)
+                        {
+                            // We ignore the first line
+                            byte[] dummyBuffer = new byte[16];
+                            track3Stream.Read(dummyBuffer, 0, 16);
+                        }
+
+                        ReadGameInfoFromBinaryData(game, track3Stream);
+                    }
+                }
+            }
+            else
+            {
+                var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
+                if (cdiEntry != null)
+                {
+
+                }
+            }
+
+            return game;
         }
     }
 }
