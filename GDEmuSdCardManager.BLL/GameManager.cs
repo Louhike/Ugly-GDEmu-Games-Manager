@@ -2,7 +2,7 @@
 using GDEmuSdCardManager.DTO;
 using GDEmuSdCardManager.DTO.CDI;
 using GDEmuSdCardManager.DTO.GDI;
-using SharpCompress.Archives.SevenZip;
+using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,23 +14,42 @@ namespace GDEmuSdCardManager.BLL
 {
     public static class GameManager
     {
+        /// <summary>
+        /// Extract game information from a PC folder
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
         public static GameOnPc ExtractPcGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
             return ConvertBaseGameToGameOnPc(game);
         }
 
-        public static GameOnPc ExtractPcGameDataFrom7ZipArchive(string archivePath, SevenZipArchive archive)
+        /// <summary>
+        /// Extract game information from a PC archive file
+        /// </summary>
+        /// <param name="archivePath"></param>
+        /// <param name="archive"></param>
+        /// <returns></returns>
+        public static GameOnPc ExtractPcGameDataFromArchive(string archivePath, IArchive archive)
         {
-            var game = ConvertBaseGameToGameOnPc(ExtractGameDataFrom7ZipArchive(archivePath, archive));
-            game.IsCompressed = true;
-            game.Is7z = true;
+            var game = ConvertBaseGameToGameOnPc(ExtractGameDataFromArchive(archivePath, archive));
+            if (game != null)
+            {
+                game.IsCompressed = true;
+            }
+
             return game;
         }
 
+        /// <summary>
+        /// Convert a <see cref="BaseGame"/> instance to a <see cref="GameOnPc"/> instance
+        /// </summary>
+        /// <param name="game"></param>
+        /// <returns></returns>
         private static GameOnPc ConvertBaseGameToGameOnPc(BaseGame game)
         {
-            if(game == null)
+            if (game == null)
             {
                 return null;
             }
@@ -60,7 +79,7 @@ namespace GDEmuSdCardManager.BLL
         public static GameOnSd ExtractSdGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
-            if(game == null)
+            if (game == null)
             {
                 return null;
             }
@@ -87,6 +106,11 @@ namespace GDEmuSdCardManager.BLL
             };
         }
 
+        /// <summary>
+        /// Extract game information from a folder
+        /// </summary>
+        /// <param name="folderPath"></param>
+        /// <returns></returns>
         public static BaseGame ExtractGameData(string folderPath)
         {
             var game = new BaseGame
@@ -127,42 +151,115 @@ namespace GDEmuSdCardManager.BLL
                 string cdiPath = Directory.EnumerateFiles(folderPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".cdi");
                 if (!string.IsNullOrEmpty(cdiPath))
                 {
-                    game.CdiInfo = GetCdiFromFile(cdiPath);
-
-                    var track3 = game.CdiInfo.Sessions[1].Tracks[0];
-
-                    bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
-
                     using (var fs = File.OpenRead(cdiPath))
                     {
-                        long startingPosition = track3.Position + (track3.PregapLength * (long)track3.SectorSize);
-                        fs.Seek(startingPosition, SeekOrigin.Begin);
-
-                        byte[] emptyBuffer = new byte[1];
-                        do
-                        {
-                            fs.Read(emptyBuffer, 0, 1);
-                        } while (emptyBuffer[0] == 0);
-
-                        fs.Seek(fs.Position - 1, SeekOrigin.Begin);
-
-                        if (isRawMode)
-                        {
-                            // We ignore the first line
-                            byte[] dummyBuffer = new byte[16];
-                            fs.Read(dummyBuffer, 0, 16);
-                        }
-
-                        ReadGameInfoFromBinaryData(game, fs);
+                        game.CdiInfo = GetCdiFromFile(fs);
+                        RetrieveTrack3DataFromCdiStream(game, fs);
                     }
                 }
             }
-            if(game.GameName == "GDMENU")
+
+            if (game.GameName == "GDMENU")
             {
                 return null;
             }
 
             return game;
+        }
+
+        private static BaseGame ExtractGameDataFromArchive(string archivePath, IArchive archive)
+        {
+            var archiveFileInfo = new FileInfo(archivePath);
+            var game = new BaseGame
+            {
+                FullPath = archivePath,
+                Path = archivePath.Split(Path.DirectorySeparatorChar).Last(),
+                Size = archiveFileInfo.Length,
+                FormattedSize = FileManager.FormatSize(archiveFileInfo.Length)
+            };
+
+            var gdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase));
+            if (gdiEntry != null)
+            {
+                using (var stream = gdiEntry.OpenEntryStream())
+                using (var ms = new MemoryStream())
+                {
+                    stream.CopyTo(ms);
+                    var gdiContentInSingleLine = Encoding.UTF8.GetString(ms.ToArray());
+                    var gdiContent = new List<string>(
+                           gdiContentInSingleLine.Split(new string[] { "\r\n", "\n" },
+                           StringSplitOptions.RemoveEmptyEntries));
+
+                    game.GdiInfo = GetGdiFromStringContent(gdiContent);
+                    game.IsGdi = true;
+                    var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
+                    if (track3.Lba != 45000)
+                    {
+                        throw new Exception("Bad track03.bin LBA");
+                    }
+
+                    bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
+
+                    var track3Entry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(track3.FileName));
+                    using (var track3Stream = track3Entry.OpenEntryStream())
+                    {
+                        if (isRawMode)
+                        {
+                            // We ignore the first line
+                            byte[] dummyBuffer = new byte[16];
+                            track3Stream.Read(dummyBuffer, 0, 16);
+                        }
+
+                        ReadGameInfoFromBinaryData(game, track3Stream);
+                    }
+                }
+            }
+            else
+            {
+                var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
+                if (cdiEntry != null)
+                {
+                    using (var stream = cdiEntry.OpenEntryStream())
+                    using (var ms = new MemoryStream())
+                    {
+                        stream.CopyTo(ms);
+                        RetrieveTrack3DataFromCdiStream(game, ms);
+                    }
+                }
+            }
+
+            if (game.GameName == "GDMENU")
+            {
+                return null;
+            }
+
+            return game;
+        }
+
+        private static void RetrieveTrack3DataFromCdiStream(BaseGame game, Stream fs)
+        {
+            var track3 = game.CdiInfo.Sessions[1].Tracks[0];
+
+            bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
+            long startingPosition = track3.Position + (track3.PregapLength * (long)track3.SectorSize);
+            fs.Seek(startingPosition, SeekOrigin.Begin);
+
+            byte[] emptyBuffer = new byte[1];
+            do
+            {
+                fs.Read(emptyBuffer, 0, 1);
+            } while (emptyBuffer[0] == 0);
+
+            fs.Seek(fs.Position - 1, SeekOrigin.Begin);
+
+            if (isRawMode)
+            {
+                // We ignore the first line
+                byte[] dummyBuffer = new byte[16];
+                fs.Read(dummyBuffer, 0, 16);
+            }
+
+            ReadGameInfoFromBinaryData(game, fs);
         }
 
         private static void ReadGameInfoFromBinaryData(BaseGame game, Stream fs)
@@ -279,160 +376,157 @@ namespace GDEmuSdCardManager.BLL
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static Cdi GetCdiFromFile(string path)
+        public static Cdi GetCdiFromFile(Stream cdiStream)
         {
             var cdi = new Cdi();
 
-            using (var fs = new FileStream(path, FileMode.Open))
+            long length = cdiStream.Seek(0L, SeekOrigin.End);
+            cdiStream.Seek(length - 8, SeekOrigin.Begin);
+
+            long globalTrackPosition = 0;
+            byte[] buffer1 = new byte[1];
+            byte[] buffer2 = new byte[2];
+            byte[] buffer4 = new byte[4];
+
+            cdiStream.Read(buffer4, 0, 4);
+            uint cdiVersion = BitConverter.ToUInt32(buffer4);
+
+            cdiStream.Read(buffer4, 0, 4);
+            uint headerOffset = BitConverter.ToUInt32(buffer4);
+
+            cdiStream.Seek(length - headerOffset, SeekOrigin.Begin);
+
+            cdiStream.Read(buffer2, 0, 2);
+            ushort numberOfSessions = BitConverter.ToUInt16(buffer2);
+
+            cdi.Sessions = new List<CdiSession>();
+            for (int i = 0; i < numberOfSessions; i++)
             {
-                long length = fs.Seek(0L, SeekOrigin.End);
-                fs.Seek(length - 8, SeekOrigin.Begin);
+                var session = new CdiSession();
+                session.Tracks = new List<CdiTrack>();
 
-                long globalTrackPosition = 0;
-                byte[] buffer1 = new byte[1];
-                byte[] buffer2 = new byte[2];
-                byte[] buffer4 = new byte[4];
-
-                fs.Read(buffer4, 0, 4);
-                uint cdiVersion = BitConverter.ToUInt32(buffer4);
-
-                fs.Read(buffer4, 0, 4);
-                uint headerOffset = BitConverter.ToUInt32(buffer4);
-
-                fs.Seek(length - headerOffset, SeekOrigin.Begin);
-
-                fs.Read(buffer2, 0, 2);
-                ushort numberOfSessions = BitConverter.ToUInt16(buffer2);
-
-                cdi.Sessions = new List<CdiSession>();
-                for (int i = 0; i < numberOfSessions; i++)
+                cdiStream.Read(buffer2, 0, 2);
+                ushort numberOfTracks = BitConverter.ToUInt16(buffer2);
+                for (int j = 0; j < numberOfTracks; j++)
                 {
-                    var session = new CdiSession();
-                    session.Tracks = new List<CdiTrack>();
+                    var track = new CdiTrack();
+                    track.Number = j + 1;
 
-                    fs.Read(buffer2, 0, 2);
-                    ushort numberOfTracks = BitConverter.ToUInt16(buffer2);
-                    for (int j = 0; j < numberOfTracks; j++)
+                    byte[] trackStartMark = { 0, 0, 0x01, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF };
+                    byte[] trackStartMarkBuffer = new byte[10];
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    if (BitConverter.ToUInt32(buffer4) != 0)
                     {
-                        var track = new CdiTrack();
-                        track.Number = j + 1;
-
-                        byte[] trackStartMark = { 0, 0, 0x01, 0, 0, 0, 0xFF, 0xFF, 0xFF, 0xFF };
-                        byte[] trackStartMarkBuffer = new byte[10];
-
-                        fs.Read(buffer4, 0, 4);
-                        if (BitConverter.ToUInt32(buffer4) != 0)
-                        {
-                            fs.Seek(8, SeekOrigin.Current);
-                        }
-
-                        for (int k = 0; k < 2; k++)
-                        {
-                            fs.Read(trackStartMarkBuffer, 0, 10);
-                            if (!trackStartMarkBuffer.SequenceEqual(trackStartMark))
-                            {
-                                throw new Exception("Bad CDI format. Incorrect track start mark.");
-                            }
-                        }
-
-                        fs.Seek(4, SeekOrigin.Current);
-                        fs.Read(buffer1, 0, 1);
-                        track.FilenameLength = buffer1[0];
-                        fs.Seek(track.FilenameLength, SeekOrigin.Current);
-
-                        fs.Seek(11, SeekOrigin.Current);
-                        fs.Seek(4, SeekOrigin.Current);
-                        fs.Seek(4, SeekOrigin.Current);
-
-                        fs.Read(buffer4, 0, 4);
-                        if (BitConverter.ToUInt32(buffer4) == 0x80000000)
-                        {
-                            fs.Seek(8, SeekOrigin.Current);
-                        }
-
-                        fs.Seek(2, SeekOrigin.Current);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.PregapLength = BitConverter.ToUInt32(buffer4);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.Length = BitConverter.ToUInt32(buffer4);
-
-                        fs.Seek(6, SeekOrigin.Current);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.Mode = BitConverter.ToUInt32(buffer4);
-
-                        fs.Seek(12, SeekOrigin.Current);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.StartLba = BitConverter.ToUInt32(buffer4);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.TotalLength = BitConverter.ToUInt32(buffer4);
-
-                        fs.Seek(16, SeekOrigin.Current);
-
-                        fs.Read(buffer4, 0, 4);
-                        track.SectorSizeValue = BitConverter.ToUInt32(buffer4);
-
-                        switch (track.SectorSizeValue)
-                        {
-                            case 0: track.SectorSize = 2048; break;
-                            case 1: track.SectorSize = 2336; break;
-                            case 2: track.SectorSize = 2352; break;
-                            default:
-                                throw new Exception($"Unexpected SectorSizeValue in CDI ({track.SectorSizeValue}).");
-                        }
-
-                        if (track.Mode > 2)
-                        {
-                            throw new Exception($"Unmanaged track mode ({track.Mode}).");
-                        }
-
-                        fs.Seek(29, SeekOrigin.Current);
-
-                        if (cdiVersion != Cdi.CdiVersion2)
-                        {
-                            fs.Seek(5, SeekOrigin.Current);
-                            fs.Read(buffer4, 0, 4);
-                            if (BitConverter.ToUInt32(buffer4) == 0xffffffff)
-                            {
-                                fs.Seek(78, SeekOrigin.Current);
-                            }
-                        }
-
-                        session.Tracks.Add(track);
-
-                        var position = fs.Position;
-
-                        if (track.TotalLength < track.PregapLength + track.Length)
-                        {
-                            fs.Seek(globalTrackPosition, SeekOrigin.Begin);
-                            fs.Seek(track.TotalLength, SeekOrigin.Current);
-                            track.Position = fs.Position;
-                            globalTrackPosition = fs.Position;
-                        }
-                        else
-                        {
-                            fs.Seek(globalTrackPosition, SeekOrigin.Begin);
-                            track.Position = fs.Position;
-                            fs.Seek(track.TotalLength * (long)track.SectorSize, SeekOrigin.Current);
-                            globalTrackPosition = fs.Position;
-                        }
-
-                        fs.Seek(position, SeekOrigin.Begin);
+                        cdiStream.Seek(8, SeekOrigin.Current);
                     }
 
-                    cdi.Sessions.Add(session);
+                    for (int k = 0; k < 2; k++)
+                    {
+                        cdiStream.Read(trackStartMarkBuffer, 0, 10);
+                        if (!trackStartMarkBuffer.SequenceEqual(trackStartMark))
+                        {
+                            throw new Exception("Bad CDI format. Incorrect track start mark.");
+                        }
+                    }
 
-                    fs.Seek(4, SeekOrigin.Current);
-                    fs.Seek(8, SeekOrigin.Current);
+                    cdiStream.Seek(4, SeekOrigin.Current);
+                    cdiStream.Read(buffer1, 0, 1);
+                    track.FilenameLength = buffer1[0];
+                    cdiStream.Seek(track.FilenameLength, SeekOrigin.Current);
+
+                    cdiStream.Seek(11, SeekOrigin.Current);
+                    cdiStream.Seek(4, SeekOrigin.Current);
+                    cdiStream.Seek(4, SeekOrigin.Current);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    if (BitConverter.ToUInt32(buffer4) == 0x80000000)
+                    {
+                        cdiStream.Seek(8, SeekOrigin.Current);
+                    }
+
+                    cdiStream.Seek(2, SeekOrigin.Current);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.PregapLength = BitConverter.ToUInt32(buffer4);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.Length = BitConverter.ToUInt32(buffer4);
+
+                    cdiStream.Seek(6, SeekOrigin.Current);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.Mode = BitConverter.ToUInt32(buffer4);
+
+                    cdiStream.Seek(12, SeekOrigin.Current);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.StartLba = BitConverter.ToUInt32(buffer4);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.TotalLength = BitConverter.ToUInt32(buffer4);
+
+                    cdiStream.Seek(16, SeekOrigin.Current);
+
+                    cdiStream.Read(buffer4, 0, 4);
+                    track.SectorSizeValue = BitConverter.ToUInt32(buffer4);
+
+                    switch (track.SectorSizeValue)
+                    {
+                        case 0: track.SectorSize = 2048; break;
+                        case 1: track.SectorSize = 2336; break;
+                        case 2: track.SectorSize = 2352; break;
+                        default:
+                            throw new Exception($"Unexpected SectorSizeValue in CDI ({track.SectorSizeValue}).");
+                    }
+
+                    if (track.Mode > 2)
+                    {
+                        throw new Exception($"Unmanaged track mode ({track.Mode}).");
+                    }
+
+                    cdiStream.Seek(29, SeekOrigin.Current);
 
                     if (cdiVersion != Cdi.CdiVersion2)
                     {
-                        fs.Seek(1, SeekOrigin.Current);
+                        cdiStream.Seek(5, SeekOrigin.Current);
+                        cdiStream.Read(buffer4, 0, 4);
+                        if (BitConverter.ToUInt32(buffer4) == 0xffffffff)
+                        {
+                            cdiStream.Seek(78, SeekOrigin.Current);
+                        }
                     }
+
+                    session.Tracks.Add(track);
+
+                    var position = cdiStream.Position;
+
+                    if (track.TotalLength < track.PregapLength + track.Length)
+                    {
+                        cdiStream.Seek(globalTrackPosition, SeekOrigin.Begin);
+                        cdiStream.Seek(track.TotalLength, SeekOrigin.Current);
+                        track.Position = cdiStream.Position;
+                        globalTrackPosition = cdiStream.Position;
+                    }
+                    else
+                    {
+                        cdiStream.Seek(globalTrackPosition, SeekOrigin.Begin);
+                        track.Position = cdiStream.Position;
+                        cdiStream.Seek(track.TotalLength * (long)track.SectorSize, SeekOrigin.Current);
+                        globalTrackPosition = cdiStream.Position;
+                    }
+
+                    cdiStream.Seek(position, SeekOrigin.Begin);
+                }
+
+                cdi.Sessions.Add(session);
+
+                cdiStream.Seek(4, SeekOrigin.Current);
+                cdiStream.Seek(8, SeekOrigin.Current);
+
+                if (cdiVersion != Cdi.CdiVersion2)
+                {
+                    cdiStream.Seek(1, SeekOrigin.Current);
                 }
             }
 
@@ -447,65 +541,6 @@ namespace GDEmuSdCardManager.BLL
             }
 
             return cdi;
-        }
-
-        private static BaseGame ExtractGameDataFrom7ZipArchive(string archivePath, SevenZipArchive archive)
-        {
-            var archiveFileInfo = new FileInfo(archivePath);
-            var game = new BaseGame
-            {
-                FullPath = archivePath,
-                Path = archivePath.Split(Path.DirectorySeparatorChar).Last(),
-                Size = archiveFileInfo.Length,
-                FormattedSize = FileManager.FormatSize(archiveFileInfo.Length)
-            };
-
-            var gdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase));
-            if(gdiEntry != null)
-            {
-                using (var stream = gdiEntry.OpenEntryStream())
-                using (var ms = new MemoryStream())
-                {
-                    stream.CopyTo(ms);
-                    var gdiContentInSingleLine = Encoding.UTF8.GetString(ms.ToArray());
-                    var gdiContent = new List<string>(
-                           gdiContentInSingleLine.Split(new string[] { "\r\n", "\n" },
-                           StringSplitOptions.RemoveEmptyEntries));
-
-                    game.GdiInfo = GetGdiFromStringContent(gdiContent);
-                    game.IsGdi = true;
-                    var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
-                    if (track3.Lba != 45000)
-                    {
-                        throw new Exception("Bad track03.bin LBA");
-                    }
-
-                    bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
-
-                    var track3Entry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(track3.FileName));
-                    using (var track3Stream = track3Entry.OpenEntryStream())
-                    {
-                        if (isRawMode)
-                        {
-                            // We ignore the first line
-                            byte[] dummyBuffer = new byte[16];
-                            track3Stream.Read(dummyBuffer, 0, 16);
-                        }
-
-                        ReadGameInfoFromBinaryData(game, track3Stream);
-                    }
-                }
-            }
-            else
-            {
-                var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
-                if (cdiEntry != null)
-                {
-
-                }
-            }
-
-            return game;
         }
     }
 }

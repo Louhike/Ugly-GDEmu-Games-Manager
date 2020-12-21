@@ -1,6 +1,7 @@
 ﻿using GDEmuSdCardManager.BLL.Extensions;
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
+using SharpCompress.Archives;
 using SharpCompress.Archives.SevenZip;
 using System;
 using System.Collections.Generic;
@@ -171,42 +172,39 @@ namespace GDEmuSdCardManager.BLL
             string oldGdiPath;
             var tempPath = @".\temp_uncompressed\";
             oldGdiPath = tempPath;
-            if (game.Is7z)
+            var archive = ArchiveFactory.Open(game.FullPath);
+            var gpiEntry = archive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi") || e.Key.EndsWith(".cdi"));
+            var separator = "/";
+            var pathParts = gpiEntry.Key.Split(separator);
+            List<IArchiveEntry> entriesToExtract = new List<IArchiveEntry>();
+            if (pathParts.Count() > 1)
             {
-                var sevenZipArchive = SevenZipArchive.Open(game.FullPath);
-                var gpiEntry = sevenZipArchive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi"));
-                var separator = "/";
-                var pathParts = gpiEntry.Key.Split(separator);
-                List<SevenZipArchiveEntry> entriesToExtract = new List<SevenZipArchiveEntry>();
-                if (pathParts.Count() > 1)
-                {
-                    string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
-                    entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
-                }
-                else
-                {
-                    entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
-                }
+                string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
+                entriesToExtract.AddRange(archive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
+            }
+            else
+            {
+                entriesToExtract.AddRange(archive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
+            }
 
-                if (!Directory.Exists(tempPath))
-                {
-                    Directory.CreateDirectory(tempPath);
-                }
+            if (!Directory.Exists(tempPath))
+            {
+                Directory.CreateDirectory(tempPath);
+            }
 
-                foreach (var entry in entriesToExtract)
+            foreach (var entry in entriesToExtract)
+            {
+                var fileName = entry.Key.Split(separator).Last();
+                using (var entryStream = entry.OpenEntryStream())
                 {
-                    var fileName = entry.Key.Split(separator).Last();
-                    using (var entryStream = entry.OpenEntryStream())
+                    using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
                     {
-                        using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
-                        {
-                            entryStream.CopyTo(destinationFileStream);
-                        }
+                        entryStream.CopyTo(destinationFileStream);
                     }
                 }
-
-                oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
             }
+
+            oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
 
             return oldGdiPath;
         }
