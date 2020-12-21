@@ -488,7 +488,7 @@ namespace GDEmuSdCardManager
                         continue;
                     }
 
-                    if(!games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
+                    if(game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
                     {
                         games.Add(game);
                     }

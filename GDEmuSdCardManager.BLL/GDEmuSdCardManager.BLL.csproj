@@ -34,4 +34,8 @@
   <ItemGroup>
     <AdditionalFiles Include="..\.sonarlint\uggm\CSharp\SonarLint.xml" Link="SonarLint.xml" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="temp_uncompressed\" />
+  </ItemGroup>
 </Project>

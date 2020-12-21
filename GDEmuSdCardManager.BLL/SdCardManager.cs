@@ -1,6 +1,7 @@
 ﻿using GDEmuSdCardManager.BLL.Extensions;
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
+using SharpCompress.Archives.SevenZip;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -44,7 +45,10 @@ namespace GDEmuSdCardManager.BLL
                     try
                     {
                         var game = GameManager.ExtractSdGameData(subFolder);
-                        gamesOnSdCard.Add(game);
+                        if(game != null)
+                        {
+                            gamesOnSdCard.Add(game);
+                        }
                     }
                     catch (Exception error)
                     {
@@ -97,7 +101,56 @@ namespace GDEmuSdCardManager.BLL
                     Directory.CreateDirectory(destinationFolder);
                 }
 
-                var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
+                string oldGdiPath;
+                var tempPath = @".\temp_uncompressed\";
+                if (game.IsCompressed)
+                {
+                    oldGdiPath = tempPath;
+                    if (game.Is7z)
+                    {
+                        var sevenZipArchive = SevenZipArchive.Open(game.FullPath);
+                        var gpiEntry = sevenZipArchive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi"));
+                        var separator = "/";
+                        var pathParts = gpiEntry.Key.Split(separator);
+                        List<SevenZipArchiveEntry> entriesToExtract = new List<SevenZipArchiveEntry>();
+                        if (pathParts.Count() > 1)
+                        {
+                            string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
+                            entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
+                        }
+                        else
+                        {
+                            entriesToExtract.AddRange(sevenZipArchive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
+                        }
+
+                        if(!Directory.Exists(tempPath))
+                        {
+                            Directory.CreateDirectory(tempPath);
+                        }
+
+                        foreach (var entry in entriesToExtract)
+                        {
+                            var fileName = entry.Key.Split(separator).Last();
+                            using (var entryStream = entry.OpenEntryStream())
+                            {
+                                using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
+                                {
+                                    entryStream.CopyTo(destinationFileStream);
+                                    //while (entryStream.Position < entryStream.Length)
+                                    //{
+                                    //    destinationFileStream.WriteByte((byte)entryStream.ReadByte());
+                                    //}
+                                }
+                            }
+                        }
+
+                        oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
+                    }
+                }
+                else
+                {
+                    oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
+                }
 
                 //var commandResult = await Command
                 //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)

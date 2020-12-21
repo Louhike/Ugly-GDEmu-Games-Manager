@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 namespace GDEmuSdCardManager.BLL
 {
-    public class GameManager
+    public static class GameManager
     {
         public static GameOnPc ExtractPcGameData(string folderPath)
         {
@@ -24,11 +24,17 @@ namespace GDEmuSdCardManager.BLL
         {
             var game = ConvertBaseGameToGameOnPc(ExtractGameDataFrom7ZipArchive(archivePath, archive));
             game.IsCompressed = true;
-            return ConvertBaseGameToGameOnPc(game);
+            game.Is7z = true;
+            return game;
         }
 
         private static GameOnPc ConvertBaseGameToGameOnPc(BaseGame game)
         {
+            if(game == null)
+            {
+                return null;
+            }
+
             return new GameOnPc
             {
                 BootFile = game.BootFile,
@@ -54,6 +60,11 @@ namespace GDEmuSdCardManager.BLL
         public static GameOnSd ExtractSdGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
+            if(game == null)
+            {
+                return null;
+            }
+
             return new GameOnSd
             {
                 BootFile = game.BootFile,
@@ -145,6 +156,10 @@ namespace GDEmuSdCardManager.BLL
                         ReadGameInfoFromBinaryData(game, fs);
                     }
                 }
+            }
+            if(game.GameName == "GDMENU")
+            {
+                return null;
             }
 
             return game;
