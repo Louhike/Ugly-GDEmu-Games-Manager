@@ -16,7 +16,7 @@ namespace GDEmuSdCardManager.BLL
     {
         public string DrivePath { get; set; }
 
-        private string tempPath = @".\temp_uncompressed\";
+        private readonly string tempPath = @".\temp_uncompressed\";
 
         public SdCardManager(string path)
         {
@@ -93,7 +93,6 @@ namespace GDEmuSdCardManager.BLL
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
             string oldImagePath = game.FullPath;
-            //string oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
 
             if (game.IsCompressed)
             {
@@ -173,7 +172,7 @@ namespace GDEmuSdCardManager.BLL
 
         private string ExtractArchive(GameOnPc game)
         {
-            string oldGdiPath = tempPath;
+            string oldGdiPath;
             var archive = ArchiveFactory.Open(game.FullPath);
             var gpiEntry = archive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi") || e.Key.EndsWith(".cdi"));
             var separator = "/";
