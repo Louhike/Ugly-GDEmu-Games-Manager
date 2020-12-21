@@ -2,7 +2,6 @@
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
 using SharpCompress.Archives;
-using SharpCompress.Archives.SevenZip;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -48,7 +47,7 @@ namespace GDEmuSdCardManager.BLL
                     try
                     {
                         var game = GameManager.ExtractSdGameData(subFolder);
-                        if(game != null)
+                        if (game != null)
                         {
                             gamesOnSdCard.Add(game);
                         }
