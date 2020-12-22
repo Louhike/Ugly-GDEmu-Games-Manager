@@ -401,6 +401,7 @@ namespace GDEmuSdCardManager
             scanWindows.Show();
             scanWindows.LoadGamesOnPc();
             OnScanFinished();
+            WriteSuccess("Games on PC scanned");
         }
 
         private void OnScanFinished()
@@ -522,72 +523,17 @@ namespace GDEmuSdCardManager
 
         private async Task CopySelectedGames()
         {
-            var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
-
-            var gamesToCopy = PcFoldersWithGdiListView.Items
-                .Cast<GameOnPc>()
-                .Where(i => i.MustBeOnSd && (!i.IsInSdCard || i.MustShrink));
-
-            WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
-
-            CopyProgressLabel.Visibility = Visibility.Visible;
-            CopyProgressBar.Maximum = gamesToCopy.Count();
-            CopyProgressBar.Value = 0;
-            CopyProgressBar.Visibility = Visibility.Visible;
-
-            short index = 2;
-
-            foreach (GameOnPc selectedItem in gamesToCopy)
+            scanViewModel = new ScanViewModel
             {
-                WriteInfo($"Copying {selectedItem.GameName} {selectedItem.Disc}...");
+                GamesOnPc = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().OrderBy(g => g.GameName),
+                MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
+                PcFolder = PcFolderTextBox.Text,
+                SdDrive = SdFolderComboBox.SelectedItem as string
+            };
 
-                if (!string.IsNullOrEmpty(selectedItem.SdFolder))
-                {
-                    index = short.Parse(Path.GetFileName(selectedItem.SdFolder));
-                }
-                else
-                {
-                    try
-                    {
-                        index = sdCardManager.FindAvailableFolderForGame(index);
-                    }
-                    catch (Exception e)
-                    {
-                        WriteError("Error while trying to find an available folder to copy games: " + e.Message);
-                    }
-
-                    if (index == -1)
-                    {
-                        WriteError($"You cannot have more than 9999 games on your SD card.");
-                        break;
-                    }
-                }
-
-                try
-                {
-                    await sdCardManager.AddGame(selectedItem, index);
-                    CopyProgressBar.Value++;
-                    WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
-                }
-                catch (Exception error)
-                {
-                    string messageBoxText = error.Message;
-                    string caption = "Error";
-                    MessageBoxButton button = MessageBoxButton.OK;
-                    MessageBoxImage icon = MessageBoxImage.Warning;
-                    MessageBox.Show(messageBoxText, caption, button, icon);
-                    WriteError(error.Message);
-                }
-            }
-
-            if (CopyProgressBar.Value < gamesToCopy.Count())
-            {
-                WriteInfo($"There was an error. {CopyProgressBar.Value} games were copied.");
-            }
-            else
-            {
-                WriteSuccess($"Games copied");
-            }
+            var scanWindows = new ScanWindow(scanViewModel);
+            scanWindows.Show();
+            await scanWindows.CopySelectedGames();
         }
 
         private void RemoveSelectedGames()
