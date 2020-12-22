@@ -494,7 +494,7 @@ namespace GDEmuSdCardManager
             ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileCopying;
             RemoveSelectedGames();
             await CopySelectedGames();
-            ScanFolders();
+            LoadGamesOnSd();
             WriteInfo("Creating Menu...");
 
             try
