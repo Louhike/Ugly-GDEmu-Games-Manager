@@ -11,7 +11,7 @@
         <StatusBar DockPanel.Dock="Bottom" Height="40">
             <Label x:Name="CopyProgressLabel" Content="Progress:" Visibility="Visible" HorizontalAlignment="Left" Width="58" Height="30" VerticalAlignment="Center" />
             <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" HorizontalAlignment="Left" Width="123" Height="30" VerticalAlignment="Center" />
-            <Button Content="Open logs" Height="30" Width="60" HorizontalAlignment="Left" Click="Button_Click"/>
+            <Button Content="Open logs" Height="30" Width="60" HorizontalAlignment="Left" Click="OpenLogsButton_Click"/>
             <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" HorizontalAlignment="Stretch" Block.LineHeight="1" Height="30" VerticalScrollBarVisibility="Visible">
                 <FlowDocument />
             </RichTextBox>

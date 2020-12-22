@@ -1,0 +1,21 @@
+﻿<Window x:Class="GDEmuSdCardManager.ScanWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GDEmuSdCardManager"
+        mc:Ignorable="d"
+        Title="Scan output" Height="480" Width="640">
+    <DockPanel>
+        <StatusBar DockPanel.Dock="Bottom" Height="40">
+            <Button x:Name="CloseButton" Content="Close" IsEnabled="False" Height="30" Width="60" HorizontalAlignment="Left" Click="CloseButton_Click"/>
+            <Label x:Name="CopyProgressLabel" Content="Progress:" Visibility="Visible" HorizontalAlignment="Left" Width="58" Height="30" VerticalAlignment="Center" />
+            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" Height="30" VerticalAlignment="Center" Width="480" />
+        </StatusBar>
+        <Grid>
+            <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Block.LineHeight="1" VerticalScrollBarVisibility="Visible">
+                <FlowDocument />
+            </RichTextBox>
+        </Grid>
+    </DockPanel>
+</Window>

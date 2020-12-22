@@ -46,6 +46,8 @@ namespace GDEmuSdCardManager
 
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
+        public ScanViewModel scanViewModel { get; set; }
+
         public MainWindow()
         {
             SetupExceptionHandling();
@@ -389,191 +391,24 @@ namespace GDEmuSdCardManager
         {
             PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
 
-            if (string.IsNullOrEmpty(PcFolderTextBox.Text))
+            scanViewModel = new ScanViewModel
             {
-                WriteError("PC path must not be empty");
-                IsScanSuccessful = false;
-                return;
-            }
+                MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
+                PcFolder = PcFolderTextBox.Text
+            };
 
-            IEnumerable<string> paths = PcFolderTextBox.Text.Split(pathSplitter);
-
-            foreach (string path in paths)
-            {
-                if (!Directory.Exists(path))
-                {
-                    WriteError($"PC path {path} is invalid");
-                    IsScanSuccessful = false;
-                }
-            }
-
-            if (!IsScanSuccessful)
-            {
-                return;
-            }
-
-            List<string> subFolders = new List<string>();
-            List<string> compressedFiles = new List<string>();
-            foreach (string path in paths)
-            {
-                subFolders.AddRange(EnumerateFolders(path));
-                compressedFiles.AddRange(EnumerateArchives(path));
-            }
-
-            var games = new List<GameOnPc>();
-
-            foreach (var subFolder in subFolders)
-            {
-                //Stopwatch stopwatch = new Stopwatch();
-                //stopwatch.Start();
-                //WriteInfo($"Reading folder {subFolder}");
-                if (Directory
-                    .EnumerateFiles(
-                    subFolder,
-                    "*",
-                    new EnumerationOptions
-                    {
-                        IgnoreInaccessible = true,
-                        RecurseSubdirectories = false,
-                        ReturnSpecialDirectories = false
-                    })
-                    .Count(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi") > 1)
-                {
-                    WriteError($"You have more than one GDI/CDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
-                    continue;
-                }
-
-                var gdiFile = Directory.EnumerateFiles(
-                    subFolder,
-                    "*",
-                    new EnumerationOptions
-                    {
-                        IgnoreInaccessible = true,
-                        RecurseSubdirectories = false,
-                        ReturnSpecialDirectories = false
-                    })
-                    .FirstOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
-
-                if (gdiFile != null)
-                {
-                    GameOnPc game;
-                    try
-                    {
-                        game = GameManager.ExtractPcGameData(subFolder);
-                    }
-                    catch (Exception error)
-                    {
-                        WriteError(error.Message);
-                        continue;
-                    }
-
-                    if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
-                    {
-                        games.Add(game);
-                    }
-                }
-
-                //stopwatch.Start();
-                //WriteInfo($"Finished reading folder {subFolder}. Time elapsed: {stopwatch.Elapsed}");
-            }
-
-            foreach (var compressedFile in compressedFiles)
-            {
-                Stopwatch stopwatch = new Stopwatch();
-                stopwatch.Start();
-                WriteInfo($"Reading archive {compressedFile}");
-                IArchive archive;
-                try
-                {
-                    archive = ArchiveFactory.Open(new FileInfo(compressedFile));
-                }
-                catch (Exception ex)
-                {
-                    WriteError($"Could not open archive {compressedFile}");
-                    stopwatch.Start();
-                    WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    continue;
-                }
-
-                if (ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") != null)
-                {
-                    GameOnPc game;
-
-                    try
-                    {
-                        if (archive.Type == SharpCompress.Common.ArchiveType.SevenZip && ScanSevenZipCheckbox.IsChecked == false)
-                        {
-                            WriteInfo($"Archive {compressedFile} ignored as it's a 7z file a nd the option isn't ticked.");
-                            continue;
-                        }
-
-                        game = GameManager.ExtractPcGameDataFromArchive(compressedFile, archive);
-                    }
-                    catch (Exception error)
-                    {
-                        WriteError(error.Message);
-                        stopwatch.Start();
-                        WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                        continue;
-                    }
-
-                    if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
-                    {
-                        games.Add(game);
-                    }
-                }
-                else
-                {
-                    WriteError($"Could not find GDI in archive {compressedFile}");
-                    stopwatch.Start();
-                    WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    continue;
-                }
-
-                stopwatch.Start();
-                WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-            }
-
-            PcFoldersWithGdiListView.ItemsSource = games.OrderBy(f => f.GameName);
-            WriteSuccess("Games on PC scanned");
+            var scanWindows = new ScanWindow(scanViewModel);
+            scanWindows.Show();
+            scanWindows.LoadGamesOnPc();
+            OnScanFinished();
         }
 
-        private static IEnumerable<string> EnumerateFolders(string path)
+        private void OnScanFinished()
         {
-            var subFolders = new List<string>();
-            subFolders.AddRange(Directory.EnumerateDirectories(
-                                path,
-                                "*",
-                                new EnumerationOptions
-                                {
-                                    IgnoreInaccessible = true,
-                                    RecurseSubdirectories = true,
-                                    ReturnSpecialDirectories = false
-                                }));
-
-            return subFolders;
-        }
-
-        private static IEnumerable<string> EnumerateArchives(string path)
-        {
-            var compressedFiles = new List<string>();
-            compressedFiles.AddRange(Directory.EnumerateFiles(
-                path,
-                "*",
-                 new EnumerationOptions
-                 {
-                     IgnoreInaccessible = true,
-                     RecurseSubdirectories = true,
-                     ReturnSpecialDirectories = false
-                 }).Where(p => p.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".7z", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".rar", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".bz", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".bz2", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".gz", StringComparison.InvariantCultureIgnoreCase)
-                 || p.EndsWith(".lz", StringComparison.InvariantCultureIgnoreCase)));
-
-            return compressedFiles;
+            if(scanViewModel.GamesOnPc != null)
+            {
+                PcFoldersWithGdiListView.ItemsSource = scanViewModel.GamesOnPc.OrderBy(f => f.GameName);
+            }
         }
 
         private void LoadGamesOnSd()
@@ -815,7 +650,7 @@ namespace GDEmuSdCardManager
             InfoRichTextBox.ScrollToEnd();
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
+        private void OpenLogsButton_Click(object sender, RoutedEventArgs e)
         {
             var logsWindow = new LogsWindow(GetRtfStringFromRichTextBox(InfoRichTextBox));
             logsWindow.Show();
@@ -832,7 +667,7 @@ namespace GDEmuSdCardManager
 
         private void ScanSevenZipCheckbox_Checked(object sender, RoutedEventArgs e)
         {
-            string messageBoxText = "Some 7zip files can be quite slow to be scanned. So we recommend against using this option on a folder with a lot of them. It seems to happen mostly with archives with bad end of data. So you can try to extract the files and compress them again with 7Zip. Do you want to activate the option?";
+            string messageBoxText = $"Some 7zip files can be quite slow to be scanned. So don't use this option on a folder with a lot of them if you want the scan to be quick.{Environment.NewLine}Other types of archives (zip, rar, tar, bz, etc.) will be scanned even if this option isn't selected.{Environment.NewLine}Do you want to activate the option?";
             string caption = "Add 7z files scanning";
             MessageBoxButton button = MessageBoxButton.YesNo;
             MessageBoxImage icon = MessageBoxImage.Warning;
