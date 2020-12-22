@@ -74,7 +74,7 @@ namespace GDEmuSdCardManager
             FoldersExpander.Expanded += ExpandedOrCollapsedRow;
             FoldersExpander.Collapsed += ExpandedOrCollapsedRow;
             GamesExpander.Expanded += ExpandedOrCollapsedRow;
-            GamesExpander.Collapsed += ExpandedOrCollapsedRow;            
+            GamesExpander.Collapsed += ExpandedOrCollapsedRow;
 
             AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
 
@@ -312,7 +312,6 @@ namespace GDEmuSdCardManager
                 HavePathsChangedSinceLastScanSuccessful = true;
             }
 
-
             SavePathsAsDefaults();
         }
 
@@ -350,7 +349,7 @@ namespace GDEmuSdCardManager
         {
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
-            if(!string.IsNullOrEmpty(PcFolderTextBox.Text))
+            if (!string.IsNullOrEmpty(PcFolderTextBox.Text))
             {
                 PcFolderTextBox.Text += pathSplitter;
             }
@@ -468,7 +467,7 @@ namespace GDEmuSdCardManager
                         continue;
                     }
 
-                    if(game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
+                    if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
                     {
                         games.Add(game);
                     }
@@ -478,7 +477,7 @@ namespace GDEmuSdCardManager
                 //WriteInfo($"Finished reading folder {subFolder}. Time elapsed: {stopwatch.Elapsed}");
             }
 
-            foreach(var compressedFile in compressedFiles)
+            foreach (var compressedFile in compressedFiles)
             {
                 Stopwatch stopwatch = new Stopwatch();
                 stopwatch.Start();
@@ -488,7 +487,7 @@ namespace GDEmuSdCardManager
                 {
                     archive = ArchiveFactory.Open(new FileInfo(compressedFile));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     WriteError($"Could not open archive {compressedFile}");
                     stopwatch.Start();
@@ -502,7 +501,7 @@ namespace GDEmuSdCardManager
 
                     try
                     {
-                        if(archive.Type == SharpCompress.Common.ArchiveType.SevenZip && ScanSevenZipCheckbox.IsChecked == false)
+                        if (archive.Type == SharpCompress.Common.ArchiveType.SevenZip && ScanSevenZipCheckbox.IsChecked == false)
                         {
                             WriteInfo($"Archive {compressedFile} ignored as it's a 7z file a nd the option isn't ticked.");
                             continue;
@@ -554,7 +553,6 @@ namespace GDEmuSdCardManager
 
             return subFolders;
         }
-
 
         private static IEnumerable<string> EnumerateArchives(string path)
         {
@@ -834,8 +832,8 @@ namespace GDEmuSdCardManager
 
         private void ScanSevenZipCheckbox_Checked(object sender, RoutedEventArgs e)
         {
-            string messageBoxText = "Some 7zip files can be quite slow to be analyzed. So we recommend against using this option on a folder with a lot of them. It seems to happen mostly with archives with bad end of data. So you can try to extract the files and compress them again with 7Zip.";
-            string caption = "Are you sure?";
+            string messageBoxText = "Some 7zip files can be quite slow to be scanned. So we recommend against using this option on a folder with a lot of them. It seems to happen mostly with archives with bad end of data. So you can try to extract the files and compress them again with 7Zip. Do you want to activate the option?";
+            string caption = "Add 7z files scanning";
             MessageBoxButton button = MessageBoxButton.YesNo;
             MessageBoxImage icon = MessageBoxImage.Warning;
             MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);

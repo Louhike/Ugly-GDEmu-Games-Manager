@@ -94,85 +94,117 @@ namespace GDEmuSdCardManager.BLL
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
             string oldImagePath = game.FullPath;
 
-            if (game.IsCompressed)
+            try
             {
-                oldImagePath = ExtractArchive(game);
-            }
-
-            if (game.MustShrink)
-            {
-                if (Directory.Exists(destinationFolder))
+                if (game.IsCompressed)
                 {
-                    FileManager.RemoveAllFilesInDirectory(destinationFolder);
-                }
-                else
-                {
-                    Directory.CreateDirectory(destinationFolder);
+                    oldImagePath = ExtractArchive(game);
                 }
 
-                //var commandResult = await Command
-                //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
-                //    .Task;
-
-                var cts = new CancellationTokenSource();
-                cts.CancelAfter(TimeSpan.FromMinutes(2));
-                Command command = null;
-                try
+                if (game.MustShrink)
                 {
-                    command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldImagePath, destinationFolder);
-                    await command.Task.WaitOrCancel(cts.Token);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    if (command != null)
+                    if (Directory.Exists(destinationFolder))
                     {
-                        command.Kill();
+                        FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(destinationFolder);
                     }
 
-                    throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
-                }
+                    //var commandResult = await Command
+                    //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
+                    //    .Task;
 
-                //if (!commandResult.Success)
-                //{
-                //    // There is always an error even if it's working, need find out why
-                //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
-                //}
+                    var cts = new CancellationTokenSource();
+                    cts.CancelAfter(TimeSpan.FromMinutes(2));
+                    Command command = null;
+                    try
+                    {
+                        command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldImagePath, destinationFolder);
+                        await command.Task.WaitOrCancel(cts.Token);
+                    }
+                    catch (OperationCanceledException ex)
+                    {
+                        if (command != null)
+                        {
+                            command.Kill();
+                        }
 
-                var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
-                if (gdiPath == null)
-                {
-                    throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
-                }
-                var newGdi = GameManager.GetGdiFromFile(gdiPath);
-                File.Delete(gdiPath);
-                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
-                newGdi.RenameTrackFiles(destinationFolder);
-            }
-            else
-            {
-                if (game.IsGdi)
-                {
-                    // TODO only copy GDI and files referenced by it
-                    await FileManager.CopyDirectoryContentToAnother(new FileInfo(oldImagePath).Directory.FullName, destinationFolder, true);
-                    var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
+                        throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
+                    }
+
+                    //if (!commandResult.Success)
+                    //{
+                    //    // There is always an error even if it's working, need find out why
+                    //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
+                    //}
+
+                    var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
+                    if (gdiPath == null)
+                    {
+                        throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
+                    }
                     var newGdi = GameManager.GetGdiFromFile(gdiPath);
                     File.Delete(gdiPath);
                     newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
                     newGdi.RenameTrackFiles(destinationFolder);
                 }
-                else // CDI
+                else
                 {
-                    using (FileStream SourceStream = File.Open(oldImagePath, FileMode.Open))
+                    if (game.IsGdi)
                     {
-                        using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, "disc.cdi")))
+                        if (!Directory.Exists(destinationFolder))
                         {
-                            await SourceStream.CopyToAsync(DestinationStream);
+                            Directory.CreateDirectory(destinationFolder);
+                        }
+                        else
+                        {
+                            FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                        }
+
+                        foreach (var track in game.GdiInfo.Tracks)
+                        {
+                            using (FileStream SourceStream = File.Open(oldImagePath + @"\" + track.FileName, FileMode.Open))
+                            {
+                                using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, track.FileName)))
+                                {
+                                    await SourceStream.CopyToAsync(DestinationStream);
+                                }
+                            }
+                        }
+
+                        string gdiPath = Directory.EnumerateFiles(oldImagePath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                        var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                        newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                        newGdi.RenameTrackFiles(destinationFolder);
+                    }
+                    else // CDI
+                    {
+                        using (FileStream SourceStream = File.Open(oldImagePath, FileMode.Open))
+                        {
+                            using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, "disc.cdi")))
+                            {
+                                await SourceStream.CopyToAsync(DestinationStream);
+                            }
                         }
                     }
                 }
             }
+            catch
+            {
+                // If there is a problem, we roll back and remove the folder on the SD card.
+                if (Directory.Exists(destinationFolder))
+                {
+                    Directory.Delete(destinationFolder);
+                }
 
-            FileManager.RemoveAllFilesInDirectory(tempPath);
+                throw;
+            }
+            finally
+            {
+                FileManager.RemoveAllFilesInDirectory(tempPath);
+            }
         }
 
         private string ExtractArchive(GameOnPc game)

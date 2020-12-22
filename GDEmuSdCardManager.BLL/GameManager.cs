@@ -222,9 +222,11 @@ namespace GDEmuSdCardManager.BLL
             //    var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
             //    if (cdiEntry != null)
             //    {
+            //        using (var cs = cdiEntry.OpenEntryStream())
             //        using (var ms = new MemoryStream())
             //        {
-            //            cdiEntry.WriteTo(ms);
+            //            cs.
+            //            game.CdiInfo = GetCdiFromFile(ms);
             //            RetrieveTrack3DataFromCdiStream(game, ms);
             //        }
             //    }
