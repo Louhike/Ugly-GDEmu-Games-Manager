@@ -2,6 +2,7 @@
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
 using SharpCompress.Archives;
+using SharpCompress.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -149,10 +150,10 @@ namespace GDEmuSdCardManager.BLL
             }
             else
             {
-                await FileManager.CopyDirectoryContentToAnother(new FileInfo(oldImagePath).Directory.FullName, destinationFolder, true);
-
                 if (game.IsGdi)
                 {
+                    // TODO only copy GDI and files referenced by it
+                    await FileManager.CopyDirectoryContentToAnother(new FileInfo(oldImagePath).Directory.FullName, destinationFolder, true);
                     var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
                     var newGdi = GameManager.GetGdiFromFile(gdiPath);
                     File.Delete(gdiPath);
@@ -161,8 +162,13 @@ namespace GDEmuSdCardManager.BLL
                 }
                 else // CDI
                 {
-                    var cdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".cdi");
-                    File.Move(cdiPath, Path.Combine(destinationFolder, "disc.cdi"));
+                    using (FileStream SourceStream = File.Open(oldImagePath, FileMode.Open))
+                    {
+                        using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, "disc.cdi")))
+                        {
+                            await SourceStream.CopyToAsync(DestinationStream);
+                        }
+                    }
                 }
             }
 
@@ -194,7 +200,8 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var entry in entriesToExtract)
             {
-                var fileName = entry.Key.Split(separator).Last();
+                var fileName = entry.Key.Split(@"/").Last().Split(@"\").Last();
+                File.Create(tempPath + fileName).Close();
                 entry.WriteToFile(tempPath + fileName);
             }
 
