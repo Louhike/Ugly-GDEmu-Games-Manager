@@ -19,14 +19,9 @@ namespace GDEmuSdCardManager.BLL
 
             var sdFolders = Directory.EnumerateDirectories(destinationFolder);
 
-            foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
+            foreach(var folder in sdFolders.Where(f =>  Path.GetFileName(f).Contains("_") && !Directory.EnumerateFileSystemEntries(f).Any()))
             {
-                if (Directory.Exists(folder + "_") && !Directory.EnumerateFileSystemEntries(folder + "_").Any())
-                {
-                    Directory.Delete(folder + "_");
-                }
-
-                Directory.Move(folder, folder + "_");
+                Directory.Delete(folder);
             }
 
             var tempPath = @".\menu_tools_and_files\temp_content";
@@ -34,6 +29,16 @@ namespace GDEmuSdCardManager.BLL
 
             try
             {
+                foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
+                {
+                    if (Directory.Exists(folder + "_"))
+                    {
+                        throw new Exception("The SD is populated with non-empty folders with underscore (_) in them. This might be temp folders created by the tool in a previous index creation. Please check manually what they contain and rename them with a correct name (01, 02, 03,... 999).");
+                    }
+
+                    Directory.Move(folder, folder + "_");
+                }
+
                 if (Directory.Exists(tempPath))
                 {
                     FileManager.RemoveAllFilesInDirectory(tempPath);

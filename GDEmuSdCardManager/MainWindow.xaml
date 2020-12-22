@@ -45,6 +45,7 @@
                         <Button x:Name="UndoButton" VerticalAlignment="Top" Content="Undo" Margin="0,29,7,0" Click="LoadAllButton_Click" Height="22" HorizontalAlignment="Right" Width="103" />
                         <Label x:Name="SdSpaceLabel" Content="" Margin="154,29,0,0" HorizontalAlignment="Left" Padding="2" Width="118" Height="22" VerticalAlignment="Top" />
                         <CheckBox x:Name="CreateMenuIndexCheckbox" IsChecked="True" Content="Menu index" Margin="0,56,131,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
+                        <CheckBox x:Name="ScanSevenZipCheckbox" IsChecked="False" Checked="ScanSevenZipCheckbox_Checked" Content="Scan 7z files" Margin="0,56,230,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
                         <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply" Margin="0,29,119,0" Click="ApplySelectedActions" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" />
                         <Button x:Name="UndoButton_Copy" VerticalAlignment="Top" Content="Help" Margin="0,55,7,0" Click="HelpButton_Click" Height="22" HorizontalAlignment="Right" Width="103" />
                     </Grid>

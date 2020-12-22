@@ -6,8 +6,6 @@ using log4net.Layout;
 using log4net.Repository.Hierarchy;
 using Ookii.Dialogs.Wpf;
 using SharpCompress.Archives;
-using SharpCompress.Archives.SevenZip;
-using SharpCompress.Readers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -83,8 +81,8 @@ namespace GDEmuSdCardManager
             Title += " - " + currentVersion;
             CheckUpdate();
 
-            ScanFolders();
-            ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
+            //ScanFolders();
+            //ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
         }
 
         private void ListView_OnColumnClick(object sender, RoutedEventArgs e)
@@ -427,6 +425,9 @@ namespace GDEmuSdCardManager
 
             foreach (var subFolder in subFolders)
             {
+                //Stopwatch stopwatch = new Stopwatch();
+                //stopwatch.Start();
+                //WriteInfo($"Reading folder {subFolder}");
                 if (Directory
                     .EnumerateFiles(
                     subFolder,
@@ -472,10 +473,16 @@ namespace GDEmuSdCardManager
                         games.Add(game);
                     }
                 }
+
+                //stopwatch.Start();
+                //WriteInfo($"Finished reading folder {subFolder}. Time elapsed: {stopwatch.Elapsed}");
             }
 
             foreach(var compressedFile in compressedFiles)
             {
+                Stopwatch stopwatch = new Stopwatch();
+                stopwatch.Start();
+                WriteInfo($"Reading archive {compressedFile}");
                 IArchive archive;
                 try
                 {
@@ -484,25 +491,30 @@ namespace GDEmuSdCardManager
                 catch(Exception ex)
                 {
                     WriteError($"Could not open archive {compressedFile}");
+                    stopwatch.Start();
+                    WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
                     continue;
                 }
 
-                if(archive.Entries != null && archive.Entries.Any(e =>
-                    !e.IsDirectory
-                    && !string.IsNullOrEmpty(e.Key)
-                    && (e.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase))))
-                // CDI is deactivated for now as the analysis of the binaries is too slow.
-                //|| e.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase))))
+                if (ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") != null)
                 {
                     GameOnPc game;
 
                     try
                     {
+                        if(archive.Type == SharpCompress.Common.ArchiveType.SevenZip && ScanSevenZipCheckbox.IsChecked == false)
+                        {
+                            WriteInfo($"Archive {compressedFile} ignored as it's a 7z file a nd the option isn't ticked.");
+                            continue;
+                        }
+
                         game = GameManager.ExtractPcGameDataFromArchive(compressedFile, archive);
                     }
                     catch (Exception error)
                     {
                         WriteError(error.Message);
+                        stopwatch.Start();
+                        WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
                         continue;
                     }
 
@@ -513,9 +525,14 @@ namespace GDEmuSdCardManager
                 }
                 else
                 {
-                    WriteError($"Could not find CDI/GDI in archive {compressedFile}");
+                    WriteError($"Could not find GDI in archive {compressedFile}");
+                    stopwatch.Start();
+                    WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
                     continue;
                 }
+
+                stopwatch.Start();
+                WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
             }
 
             PcFoldersWithGdiListView.ItemsSource = games.OrderBy(f => f.GameName);
@@ -813,6 +830,19 @@ namespace GDEmuSdCardManager
             textRange.Save(ms, DataFormats.Rtf);
 
             return Encoding.Default.GetString(ms.ToArray());
+        }
+
+        private void ScanSevenZipCheckbox_Checked(object sender, RoutedEventArgs e)
+        {
+            string messageBoxText = "Some 7zip files can be quite slow to be analyzed. So we recommend against using this option on a folder with a lot of them. It seems to happen mostly with archives with bad end of data. So you can try to extract the files and compress them again with 7Zip.";
+            string caption = "Are you sure?";
+            MessageBoxButton button = MessageBoxButton.YesNo;
+            MessageBoxImage icon = MessageBoxImage.Warning;
+            MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
+            if (messageBoxResult == MessageBoxResult.No)
+            {
+                ScanSevenZipCheckbox.IsChecked = false;
+            }
         }
     }
 

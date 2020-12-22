@@ -180,7 +180,7 @@ namespace GDEmuSdCardManager.BLL
             if (pathParts.Count() > 1)
             {
                 string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
-                entriesToExtract.AddRange(archive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
+                entriesToExtract.AddRange(ArchiveManager.RetreiveFilesFromArchiveStartingWith(archive, rootPath));//archive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
             }
             else
             {
@@ -195,13 +195,7 @@ namespace GDEmuSdCardManager.BLL
             foreach (var entry in entriesToExtract)
             {
                 var fileName = entry.Key.Split(separator).Last();
-                using (var entryStream = entry.OpenEntryStream())
-                {
-                    using (var destinationFileStream = new FileStream(tempPath + fileName, FileMode.Create))
-                    {
-                        entryStream.CopyTo(destinationFileStream);
-                    }
-                }
+                entry.WriteToFile(tempPath + fileName);
             }
 
             oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");

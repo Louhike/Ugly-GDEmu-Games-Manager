@@ -178,55 +178,57 @@ namespace GDEmuSdCardManager.BLL
                 FormattedSize = FileManager.FormatSize(archiveFileInfo.Length)
             };
 
-            var gdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".gdi", StringComparison.InvariantCultureIgnoreCase));
+            IArchiveEntry gdiEntry = ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi");
+
             if (gdiEntry != null)
             {
-                using (var stream = gdiEntry.OpenEntryStream())
+                string gdiContentInSingleLine;
                 using (var ms = new MemoryStream())
                 {
-                    stream.CopyTo(ms);
-                    var gdiContentInSingleLine = Encoding.UTF8.GetString(ms.ToArray());
-                    var gdiContent = new List<string>(
-                           gdiContentInSingleLine.Split(new string[] { "\r\n", "\n" },
-                           StringSplitOptions.RemoveEmptyEntries));
-
-                    game.GdiInfo = GetGdiFromStringContent(gdiContent);
-                    game.IsGdi = true;
-                    var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
-                    if (track3.Lba != 45000)
-                    {
-                        throw new Exception("Bad track03.bin LBA");
-                    }
-
-                    bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
-
-                    var track3Entry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(track3.FileName));
-                    using (var track3Stream = track3Entry.OpenEntryStream())
-                    {
-                        if (isRawMode)
-                        {
-                            // We ignore the first line
-                            byte[] dummyBuffer = new byte[16];
-                            track3Stream.Read(dummyBuffer, 0, 16);
-                        }
-
-                        ReadGameInfoFromBinaryData(game, track3Stream);
-                    }
+                    gdiEntry.WriteTo(ms);
+                    gdiContentInSingleLine = Encoding.UTF8.GetString(ms.ToArray());
                 }
-            }
-            else
-            {
-                var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
-                if (cdiEntry != null)
+
+                var gdiContent = new List<string>(
+                        gdiContentInSingleLine.Split(new string[] { "\r\n", "\n" },
+                        StringSplitOptions.RemoveEmptyEntries));
+
+                game.GdiInfo = GetGdiFromStringContent(gdiContent);
+                game.IsGdi = true;
+                var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
+                if (track3.Lba != 45000)
                 {
-                    using (var stream = cdiEntry.OpenEntryStream())
-                    using (var ms = new MemoryStream())
+                    throw new Exception("Bad track03.bin LBA");
+                }
+
+                bool isRawMode = track3.SectorSize == 2352; // 2352/RAW mode or 2048
+
+                var track3Entry = ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, track3.FileName);
+                using (var track3Stream = track3Entry.OpenEntryStream())
+                {
+                    //track3Entry.WriteTo(track3Stream);
+                    if (isRawMode)
                     {
-                        stream.CopyTo(ms);
-                        RetrieveTrack3DataFromCdiStream(game, ms);
+                        // We ignore the first line
+                        byte[] dummyBuffer = new byte[16];
+                        track3Stream.Read(dummyBuffer, 0, 16);
                     }
+
+                    ReadGameInfoFromBinaryData(game, track3Stream);
                 }
             }
+            //else
+            //{
+            //    var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
+            //    if (cdiEntry != null)
+            //    {
+            //        using (var ms = new MemoryStream())
+            //        {
+            //            cdiEntry.WriteTo(ms);
+            //            RetrieveTrack3DataFromCdiStream(game, ms);
+            //        }
+            //    }
+            //}
 
             if (game.GameName == "GDMENU")
             {
