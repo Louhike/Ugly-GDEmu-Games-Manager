@@ -1,4 +1,5 @@
 ﻿using GDEmuSdCardManager.BLL.Extensions;
+using GDEmuSdCardManager.BLL.ImageReaders;
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
 using SharpCompress.Archives;
@@ -146,7 +147,7 @@ namespace GDEmuSdCardManager.BLL
                     {
                         throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
                     }
-                    var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                    var newGdi = GdiReader.GetGdiFromFile(gdiPath);
                     File.Delete(gdiPath);
                     newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
                     newGdi.RenameTrackFiles(destinationFolder);
@@ -176,7 +177,7 @@ namespace GDEmuSdCardManager.BLL
                         }
 
                         string gdiPath = Directory.EnumerateFiles(game.FullPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
-                        var newGdi = GameManager.GetGdiFromFile(gdiPath);
+                        var newGdi = GdiReader.GetGdiFromFile(gdiPath);
                         newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
                         newGdi.RenameTrackFiles(destinationFolder);
                     }
