@@ -1,4 +1,5 @@
 using GDEmuSdCardManager.BLL;
+using GDEmuSdCardManager.BLL.Comparers;
 using GDEmuSdCardManager.DTO;
 using log4net;
 using log4net.Appender;
@@ -13,6 +14,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -29,10 +31,11 @@ namespace GDEmuSdCardManager
     public partial class MainWindow : Window
     {
         private static readonly ILog logger = LogManager.GetLogger(typeof(MainWindow));
-        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply selected actions";
-        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying selected actions...";
+        private static readonly string ApplySelectedActionsButtonTextWhileActive = "Apply";
+        private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying ";
         private static readonly string ConfigurationPath = @".\config.json";
         private static readonly string pathSplitter = @"|";
+
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
@@ -41,8 +44,9 @@ namespace GDEmuSdCardManager
         private UgdegmConfiguration config;
         private string orderedBy = "Game";
         private bool isAscending = true;
-
         private IEnumerable<GameOnSd> gamesOnSdCard;
+
+        public ScanViewModel ScanViewModel { get; set; }
 
         public MainWindow()
         {
@@ -52,147 +56,32 @@ namespace GDEmuSdCardManager
             gamesOnSdCard = new List<GameOnSd>();
 
             currentVersion = new Version(File.ReadAllText(@".\VERSION"));
-            config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
-
-            LoadDefaultPaths();
 
             DriveInfo[] allDrives = DriveInfo.GetDrives();
             SdFolderComboBox.ItemsSource = allDrives.Select(d => d.Name);
+
+            config = UgdegmConfiguration.LoadConfiguration(ConfigurationPath);
+            LoadDefaultPaths();
 
             PcFolderTextBox.TextChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnFolderOrDriveChanged;
             SdFolderComboBox.SelectionChanged += OnDriveChanged;
 
             // Initialization for the expanders
-            starHeight = new GridLength[ExpanderGrid.RowDefinitions.Count];
-            starHeight[0] = ExpanderGrid.RowDefinitions[0].Height;
-            starHeight[2] = ExpanderGrid.RowDefinitions[2].Height;
-            ExpandedOrCollapsed(FoldersExpander);
-            ExpandedOrCollapsed(GamesExpander);
-            FoldersExpander.Expanded += ExpandedOrCollapsed;
-            FoldersExpander.Collapsed += ExpandedOrCollapsed;
-            GamesExpander.Expanded += ExpandedOrCollapsed;
-            GamesExpander.Collapsed += ExpandedOrCollapsed;
+            starHeight = new GridLength[GamesExpanderGrid.RowDefinitions.Count];
+            starHeight[0] = GamesExpanderGrid.RowDefinitions[0].Height;
+            starHeight[2] = GamesExpanderGrid.RowDefinitions[2].Height;
+            ExpandedOrCollapsedRow(FoldersExpander);
+            ExpandedOrCollapsedRow(GamesExpander);
+            FoldersExpander.Expanded += ExpandedOrCollapsedRow;
+            FoldersExpander.Collapsed += ExpandedOrCollapsedRow;
+            GamesExpander.Expanded += ExpandedOrCollapsedRow;
+            GamesExpander.Collapsed += ExpandedOrCollapsedRow;
 
             AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
 
-
             Title += " - " + currentVersion;
             CheckUpdate();
-        }
-
-        private void ListView_OnColumnClick(object sender, RoutedEventArgs e)
-        {
-            var columnClicked = e.OriginalSource as GridViewColumnHeader;
-            if (columnClicked == null) return;
-            var columnName = (columnClicked.Column.Header as string)[0..^2];
-            switch (columnName)
-            {
-                case "Game":
-                    SortByStringColumn(columnClicked, columnName, g => g.GameName);
-                    RenameSortableColumnToDefault(PathColumn);
-                    RenameSortableColumnToDefault(FormattedSizeColumn);
-                    RenameSortableColumnToDefault(SdSizeColumn);
-                    RenameSortableColumnToDefault(SdFolderColumn);
-                    break;
-                case "Folder":
-                    SortByStringColumn(columnClicked, columnName, g => g.Path);
-                    RenameSortableColumnToDefault(GameNameColumn);
-                    RenameSortableColumnToDefault(FormattedSizeColumn);
-                    RenameSortableColumnToDefault(SdSizeColumn);
-                    RenameSortableColumnToDefault(SdFolderColumn);
-                    break;
-                case "SD folder":
-                    SortByStringColumn(columnClicked, columnName, g => g.SdFolder);
-                    RenameSortableColumnToDefault(PathColumn);
-                    RenameSortableColumnToDefault(GameNameColumn);
-                    RenameSortableColumnToDefault(FormattedSizeColumn);
-                    RenameSortableColumnToDefault(SdSizeColumn);
-                    break;
-                case "Size on PC":
-                    SortByNullableLongColumn(columnClicked, columnName, g => g.Size);
-                    RenameSortableColumnToDefault(PathColumn);
-                    RenameSortableColumnToDefault(GameNameColumn);
-                    RenameSortableColumnToDefault(SdSizeColumn);
-                    RenameSortableColumnToDefault(SdFolderColumn);
-                    break;
-                case "Size on SD":
-                    SortByNullableLongColumn(columnClicked, columnName, g => g.SdSize);
-                    RenameSortableColumnToDefault(PathColumn);
-                    RenameSortableColumnToDefault(GameNameColumn);
-                    RenameSortableColumnToDefault(FormattedSizeColumn);
-                    RenameSortableColumnToDefault(SdFolderColumn);
-                    break;
-            }
-        }
-
-        private void SortByStringColumn(GridViewColumnHeader columnClicked, string columnName, Func<GameOnPc, string> propertyAccessor)
-        {
-            if (orderedBy == columnName && isAscending)
-            {
-                PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
-                    .Cast<GameOnPc>().OrderByDescending(propertyAccessor, new EmptyStringsAreLastDescending());
-                isAscending = false;
-                columnClicked.Column.Header = columnName + " ▼";
-
-                return;
-            }
-
-            PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
-                .Cast<GameOnPc>().OrderBy(propertyAccessor, new EmptyStringsAreLast());
-            isAscending = true;
-            orderedBy = columnName;
-            columnClicked.Column.Header = columnName + " ▲";
-        }
-
-        private void SortByNullableLongColumn(GridViewColumnHeader columnClicked, string columnName, Func<GameOnPc, long?> propertyAccessor)
-        {
-            if (orderedBy == columnName && isAscending)
-            {
-                PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
-                    .Cast<GameOnPc>().OrderByDescending(propertyAccessor, new NullValuesAreLastDescending());
-                isAscending = false;
-                columnClicked.Column.Header = columnName + " ▼";
-
-                return;
-            }
-
-            PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
-                .Cast<GameOnPc>().OrderBy(propertyAccessor, new NullValuesAreLast());
-            isAscending = true;
-            orderedBy = columnName;
-            columnClicked.Column.Header = columnName + " ▲";
-        }
-
-        private void RenameSortableColumnToDefault(GridViewColumn column)
-        {
-            column.Header = (column.Header as string)[0..^2] + " ▬";
-        }
-
-        private void ExpandedOrCollapsed(object sender, RoutedEventArgs e)
-        {
-            ExpandedOrCollapsed(sender as Expander);
-        }
-
-        private void ExpandedOrCollapsed(Expander expander)
-        {
-            var rowIndex = Grid.GetRow(expander);
-            var row = ExpanderGrid.RowDefinitions[rowIndex];
-            if (expander.IsExpanded)
-            {
-                row.Height = starHeight[rowIndex];
-                row.MinHeight = 50;
-            }
-            else
-            {
-                starHeight[rowIndex] = row.Height;
-                row.Height = GridLength.Auto;
-                row.MinHeight = 0;
-            }
-
-            var bothExpanded = FoldersExpander.IsExpanded && GamesExpander.IsExpanded;
-            ExpanderGridSplitter.Visibility = bothExpanded ?
-                Visibility.Visible : Visibility.Collapsed;
         }
 
         private void SetupExceptionHandling()
@@ -242,7 +131,7 @@ namespace GDEmuSdCardManager
             string message = $"Unhandled exception ({source})";
             try
             {
-                System.Reflection.AssemblyName assemblyName = System.Reflection.Assembly.GetExecutingAssembly().GetName();
+                AssemblyName assemblyName = Assembly.GetExecutingAssembly().GetName();
                 message = string.Format("Unhandled exception in {0}", assemblyName.Name);
             }
             catch (Exception ex)
@@ -255,6 +144,123 @@ namespace GDEmuSdCardManager
                 logger.Error(message, exception);
                 WriteError(message + " - " + exception.Message);
             }
+        }
+
+        private void ListView_OnColumnClick(object sender, RoutedEventArgs e)
+        {
+            var columnClicked = e.OriginalSource as GridViewColumnHeader;
+            if (columnClicked == null) return;
+            var columnName = (columnClicked.Column.Header as string)[0..^2];
+            switch (columnName)
+            {
+                case "Game":
+                    SortByColumn<EmptyStringsAreLast, EmptyStringsAreLastDescending, string>
+                        (columnClicked, columnName, g => g.GameName);
+                    RenameSortableColumnToDefault(PathColumn);
+                    RenameSortableColumnToDefault(FormattedSizeColumn);
+                    RenameSortableColumnToDefault(SdSizeColumn);
+                    RenameSortableColumnToDefault(SdFolderColumn);
+                    break;
+
+                case "Folder/Archive":
+                    SortByColumn<EmptyStringsAreLast, EmptyStringsAreLastDescending, string>
+                        (columnClicked, columnName, g => g.Path);
+                    RenameSortableColumnToDefault(GameNameColumn);
+                    RenameSortableColumnToDefault(FormattedSizeColumn);
+                    RenameSortableColumnToDefault(SdSizeColumn);
+                    RenameSortableColumnToDefault(SdFolderColumn);
+                    break;
+
+                case "SD folder":
+                    SortByColumn<EmptyStringsAreLast, EmptyStringsAreLastDescending, string>
+                        (columnClicked, columnName, g => g.SdFolder);
+                    RenameSortableColumnToDefault(PathColumn);
+                    RenameSortableColumnToDefault(GameNameColumn);
+                    RenameSortableColumnToDefault(FormattedSizeColumn);
+                    RenameSortableColumnToDefault(SdSizeColumn);
+                    break;
+
+                case "Size on PC":
+                    SortByColumn<NullValuesAreLastComparer, NullValuesAreLastDescendingComparer, long?>
+                        (columnClicked, columnName, g => g.Size);
+                    RenameSortableColumnToDefault(PathColumn);
+                    RenameSortableColumnToDefault(GameNameColumn);
+                    RenameSortableColumnToDefault(SdSizeColumn);
+                    RenameSortableColumnToDefault(SdFolderColumn);
+                    break;
+
+                case "Size on SD":
+                    SortByColumn<NullValuesAreLastComparer, NullValuesAreLastDescendingComparer, long?>(columnClicked, columnName, g => g.SdSize);
+                    RenameSortableColumnToDefault(PathColumn);
+                    RenameSortableColumnToDefault(GameNameColumn);
+                    RenameSortableColumnToDefault(FormattedSizeColumn);
+                    RenameSortableColumnToDefault(SdFolderColumn);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Sort game list view on column
+        /// </summary>
+        /// <typeparam name="TAscendingComparer">Comparer for ascending ordering</typeparam>
+        /// <typeparam name="TDescendingComparer">Comparer for descending ordering</typeparam>
+        /// <typeparam name="TValueType">Type of the property used for ordering</typeparam>
+        /// <param name="columnClicked"></param>
+        /// <param name="columnName"></param>
+        /// <param name="propertyAccessor"></param>
+        private void SortByColumn<TAscendingComparer, TDescendingComparer, TValueType>(
+            GridViewColumnHeader columnClicked,
+            string columnName,
+            Func<GameOnPc, TValueType> propertyAccessor)
+            where TAscendingComparer : IComparer<TValueType>, new()
+            where TDescendingComparer : IComparer<TValueType>, new()
+        {
+            if (orderedBy == columnName && isAscending)
+            {
+                PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                    .Cast<GameOnPc>().OrderByDescending(propertyAccessor, new TDescendingComparer());
+                isAscending = false;
+                columnClicked.Column.Header = columnName + " ▼";
+
+                return;
+            }
+
+            PcFoldersWithGdiListView.ItemsSource = PcFoldersWithGdiListView.Items
+                .Cast<GameOnPc>().OrderBy(propertyAccessor, new TAscendingComparer());
+            isAscending = true;
+            orderedBy = columnName;
+            columnClicked.Column.Header = columnName + " ▲";
+        }
+
+        private void RenameSortableColumnToDefault(GridViewColumn column)
+        {
+            column.Header = (column.Header as string)[0..^2] + " ▬";
+        }
+
+        private void ExpandedOrCollapsedRow(object sender, RoutedEventArgs e)
+        {
+            ExpandedOrCollapsedRow(sender as Expander);
+        }
+
+        private void ExpandedOrCollapsedRow(Expander expander)
+        {
+            var rowIndex = Grid.GetRow(expander);
+            var row = GamesExpanderGrid.RowDefinitions[rowIndex];
+            if (expander.IsExpanded)
+            {
+                row.Height = starHeight[rowIndex];
+                row.MinHeight = 50;
+            }
+            else
+            {
+                starHeight[rowIndex] = row.Height;
+                row.Height = GridLength.Auto;
+                row.MinHeight = 0;
+            }
+
+            var bothExpanded = FoldersExpander.IsExpanded && GamesExpander.IsExpanded;
+            GamesExpanderGridSplitter.Visibility = bothExpanded ?
+                Visibility.Visible : Visibility.Collapsed;
         }
 
         private void CheckUpdate()
@@ -275,12 +281,12 @@ namespace GDEmuSdCardManager
                 MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
                 if (messageBoxResult == MessageBoxResult.Yes)
                 {
-                    OpenBrowser(config.ReleasesUrl);
+                    OpenUrlInBrowser(config.ReleasesUrl);
                 }
             }
         }
 
-        private static void OpenBrowser(string url)
+        private static void OpenUrlInBrowser(string url)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -294,10 +300,6 @@ namespace GDEmuSdCardManager
             {
                 Process.Start("open", url);
             }
-            //else
-            //{
-            //    ...
-            //}
         }
 
         private void OnFolderOrDriveChanged(object sender, RoutedEventArgs e)
@@ -306,8 +308,9 @@ namespace GDEmuSdCardManager
             {
                 ApplySelectedActionsButton.IsEnabled = false;
                 HavePathsChangedSinceLastScanSuccessful = true;
-                WriteInfo("You have changed a path. You must rescan the folders");
             }
+
+            SavePathsAsDefaults();
         }
 
         private void OnDriveChanged(object sender, RoutedEventArgs e)
@@ -344,12 +347,12 @@ namespace GDEmuSdCardManager
         {
             var browserDialog = new VistaFolderBrowserDialog();
             browserDialog.ShowDialog();
-            PcFolderTextBox.Text += pathSplitter + browserDialog.SelectedPath;
-        }
+            if (!string.IsNullOrEmpty(PcFolderTextBox.Text))
+            {
+                PcFolderTextBox.Text += pathSplitter;
+            }
 
-        private void PcClearButton_Click(object sender, RoutedEventArgs e)
-        {
-            PcFolderTextBox.Text = string.Empty;
+            PcFolderTextBox.Text += browserDialog.SelectedPath;
         }
 
         private void LoadAllButton_Click(object sender, RoutedEventArgs e)
@@ -357,6 +360,19 @@ namespace GDEmuSdCardManager
             ScanFolders();
             ApplySelectedActionsButton.IsEnabled = IsScanSuccessful;
             HavePathsChangedSinceLastScanSuccessful = false;
+        }
+
+        private void HelpButton_Click(object sender, RoutedEventArgs e)
+        {
+            string messageBoxText = "If you have an error or do not understand something, you can leave an issue at the Github page. Do you want to open the page in your browser?";
+            string caption = "Need help?";
+            MessageBoxButton button = MessageBoxButton.YesNo;
+            MessageBoxImage icon = MessageBoxImage.Question;
+            MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
+            if (messageBoxResult == MessageBoxResult.Yes)
+            {
+                OpenUrlInBrowser(config.IssuesUrl);
+            }
         }
 
         private void ScanFolders()
@@ -371,70 +387,25 @@ namespace GDEmuSdCardManager
         {
             PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
 
-            if (string.IsNullOrEmpty(PcFolderTextBox.Text))
+            ScanViewModel = new ScanViewModel
             {
-                WriteError("PC path must not be empty");
-                IsScanSuccessful = false;
-                return;
-            }
+                MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
+                PcFolder = PcFolderTextBox.Text
+            };
 
-            IEnumerable<string> paths = PcFolderTextBox.Text.Split(pathSplitter);
-
-            foreach(string path in paths)
-            {
-                if (!Directory.Exists(path))
-                {
-                    WriteError($"PC path {path} is invalid");
-                    IsScanSuccessful = false;
-                }
-
-            }
-
-            if(!IsScanSuccessful)
-            {
-                return;
-            }
-
-            List<string> subFoldersList = new List<string>();
-            foreach (string path in paths)
-            {
-                subFoldersList.AddRange(Directory.EnumerateDirectories(path));
-
-            }
-
-            var subFoldersWithGdiList = new List<GameOnPc>();
-
-            foreach (var subFolder in subFoldersList)
-            {
-                if (Directory
-                    .EnumerateFiles(subFolder)
-                    .Count(f => Path.GetExtension(f) == ".gdi") > 1)
-                {
-                    WriteError($"You have more than one GDI file in the folder {subFolder}. Please make sure you only have one GDI per folder.");
-                    continue;
-                }
-
-                var gdiFile = Directory.EnumerateFiles(subFolder).FirstOrDefault(f => Path.GetExtension(f) == ".gdi");
-
-                if (gdiFile != null)
-                {
-                    GameOnPc game;
-                    try
-                    {
-                        game = GameManager.ExtractPcGameData(subFolder);
-                    }
-                    catch (Exception error)
-                    {
-                        WriteError(error.Message);
-                        continue;
-                    }
-
-                    subFoldersWithGdiList.Add(game);
-                }
-            }
-
-            PcFoldersWithGdiListView.ItemsSource = subFoldersWithGdiList.OrderBy(f => f.GameName);
+            var scanWindows = new ScanWindow(ScanViewModel);
+            scanWindows.Show();
+            scanWindows.LoadGamesOnPc();
+            OnScanFinished();
             WriteSuccess("Games on PC scanned");
+        }
+
+        private void OnScanFinished()
+        {
+            if (ScanViewModel.GamesOnPc != null)
+            {
+                PcFoldersWithGdiListView.ItemsSource = ScanViewModel.GamesOnPc.OrderBy(f => f.GameName);
+            }
         }
 
         private void LoadGamesOnSd()
@@ -476,7 +447,7 @@ namespace GDEmuSdCardManager
             }
 
             long freeSpace = sdCardManager.GetFreeSpace();
-            SdSpaceLabel.Content = FileManager.FormatSize(freeSpace);
+            SdSpaceLabel.Content = FileManager.FormatSize(freeSpace) + " free";
 
             WriteSuccess("Games on SD scanned");
         }
@@ -489,21 +460,20 @@ namespace GDEmuSdCardManager
                 return;
             }
 
-            foreach (GameOnPc pcViewItem in pcItemsSource)
+            var games = pcItemsSource.Cast<GameOnPc>();
+            foreach (GameOnPc game in games)
             {
-                if (gamesOnSdCard.Any(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc))
+                var gameOnSd = gamesOnSdCard.FirstOrDefault(f =>
+                    f.GameName == game.GameName
+                    && f.Disc == game.Disc
+                    && f.IsGdi == game.IsGdi);
+                if (gameOnSd != null)
                 {
-                    var gameOnSd = gamesOnSdCard.First(f => f.GameName == pcViewItem.GameName && f.Disc == pcViewItem.Disc);
-                    pcViewItem.IsInSdCard = true;
-                    pcViewItem.IsInSdCardString = "✓";
-                    pcViewItem.SdFolder = gameOnSd.Path;
-                    pcViewItem.SdSize = FileManager.GetDirectorySize(gameOnSd.FullPath);
-                    pcViewItem.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
+                    GameManager.LinkGameOnPcToGameOnSd(game, gameOnSd);
                 }
                 else
                 {
-                    pcViewItem.IsInSdCard = false;
-                    pcViewItem.IsInSdCardString = "🚫";
+                    GameManager.UnLinkGameOnPcToGameOnSd(game);
                 }
             }
 
@@ -517,7 +487,7 @@ namespace GDEmuSdCardManager
             ApplySelectedActionsButton.Content = ApplySelectedActionsButtonTextWhileCopying;
             RemoveSelectedGames();
             await CopySelectedGames();
-            ScanFolders();
+            LoadGamesOnSd();
             WriteInfo("Creating Menu...");
 
             try
@@ -546,69 +516,17 @@ namespace GDEmuSdCardManager
 
         private async Task CopySelectedGames()
         {
-            var sdCardManager = new SdCardManager(SdFolderComboBox.SelectedItem as string);
-
-            var gamesToCopy = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().Where(i => i.MustCopy);
-            WriteInfo($"Copying {gamesToCopy.Count()} game(s) to SD card...");
-
-            CopyProgressLabel.Visibility = Visibility.Visible;
-            CopyProgressBar.Maximum = gamesToCopy.Count();
-            CopyProgressBar.Value = 0;
-            CopyProgressBar.Visibility = Visibility.Visible;
-
-            short index = 2;
-
-            foreach (GameOnPc selectedItem in gamesToCopy)
+            ScanViewModel = new ScanViewModel
             {
-                WriteInfo($"Copying {selectedItem.GameName} {selectedItem.Disc}...");
+                GamesOnPc = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().OrderBy(g => g.GameName),
+                MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
+                PcFolder = PcFolderTextBox.Text,
+                SdDrive = SdFolderComboBox.SelectedItem as string
+            };
 
-                if (!string.IsNullOrEmpty(selectedItem.SdFolder))
-                {
-                    index = short.Parse(Path.GetFileName(selectedItem.SdFolder));
-                }
-                else
-                {
-                    try
-                    {
-                        index = sdCardManager.FindAvailableFolderForGame(index);
-                    }
-                    catch (Exception e)
-                    {
-                        WriteError("Error while trying to find an available folder to copy games: " + e.Message);
-                    }
-
-                    if (index == -1)
-                    {
-                        WriteError($"You cannot have more than 9999 games on your SD card.");
-                        break;
-                    }
-                }
-
-                try
-                {
-                    await sdCardManager.AddGame(selectedItem, index);
-                    CopyProgressBar.Value++;
-                    WriteInfo($"{CopyProgressBar.Value}/{gamesToCopy.Count()} games copied");
-                }
-                catch (Exception error)
-                {
-                    string messageBoxText = error.Message;
-                    string caption = "Error";
-                    MessageBoxButton button = MessageBoxButton.OK;
-                    MessageBoxImage icon = MessageBoxImage.Warning;
-                    MessageBox.Show(messageBoxText, caption, button, icon);
-                    WriteError(error.Message);
-                }
-            }
-
-            if (CopyProgressBar.Value < gamesToCopy.Count())
-            {
-                WriteInfo($"There was an error. {CopyProgressBar.Value} games were copied.");
-            }
-            else
-            {
-                WriteSuccess($"Games copied");
-            }
+            var scanWindows = new ScanWindow(ScanViewModel);
+            scanWindows.Show();
+            await scanWindows.CopySelectedGames();
         }
 
         private void RemoveSelectedGames()
@@ -618,13 +536,17 @@ namespace GDEmuSdCardManager
                 var gamesToRemove = PcFoldersWithGdiListView
                     .Items
                     .Cast<GameOnPc>()
-                    .Where(g => g.MustRemove && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
+                    .Where(g => !g.MustBeOnSd && gamesOnSdCard.Any(sg =>
+                        sg.GameName == g.GameName
+                        && sg.Disc == g.Disc));
                 WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
                 foreach (GameOnPc itemToRemove in gamesToRemove)
                 {
                     WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
                     var gameOnSdToRemove = gamesOnSdCard
-                        .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
+                        .FirstOrDefault(g =>
+                            g.GameName == itemToRemove.GameName
+                            && g.Disc == itemToRemove.Disc);
 
                     FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
                 }
@@ -637,16 +559,11 @@ namespace GDEmuSdCardManager
             }
         }
 
-        private void SaveAsDefaultsButton_Click(object sender, RoutedEventArgs e)
+        private void SavePathsAsDefaults()
         {
             config.PcDefaultPath = PcFolderTextBox.Text;
             config.SdDefaultDrive = SdFolderComboBox.SelectedItem as string;
             config.Save(ConfigurationPath);
-        }
-
-        private void LoadDefaultsPathsButton_Click(object sender, RoutedEventArgs e)
-        {
-            LoadDefaultPaths();
         }
 
         private void WriteError(string message)
@@ -670,94 +587,39 @@ namespace GDEmuSdCardManager
             {
                 Foreground = color
             };
+
             InfoRichTextBox.Document.Blocks.Add(error);
+            InfoRichTextBox.Focus();
+            InfoRichTextBox.CaretPosition = InfoRichTextBox.CaretPosition.DocumentEnd;
             InfoRichTextBox.ScrollToEnd();
         }
-    }
 
-    public class EmptyStringsAreLast : IComparer<string>
-    {
-        public int Compare(string x, string y)
+        private void OpenLogsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (String.IsNullOrEmpty(y) && !String.IsNullOrEmpty(x))
+            var logsWindow = new LogsWindow(GetRtfStringFromRichTextBox(InfoRichTextBox));
+            logsWindow.Show();
+        }
+
+        public string GetRtfStringFromRichTextBox(RichTextBox richTextBox)
+        {
+            TextRange textRange = new TextRange(richTextBox.Document.ContentStart, richTextBox.Document.ContentEnd);
+            MemoryStream ms = new MemoryStream();
+            textRange.Save(ms, DataFormats.Rtf);
+
+            return Encoding.Default.GetString(ms.ToArray());
+        }
+
+        private void ScanSevenZipCheckbox_Checked(object sender, RoutedEventArgs e)
+        {
+            string messageBoxText = $"Some 7zip files can be quite slow to be scanned. So don't use this option on a folder with a lot of them if you want the scan to be quick.{Environment.NewLine}Other types of archives (zip, rar, tar, bz, etc.) will be scanned even if this option isn't selected.{Environment.NewLine}Do you want to activate the option?";
+            string caption = "Add 7z files scanning";
+            MessageBoxButton button = MessageBoxButton.YesNo;
+            MessageBoxImage icon = MessageBoxImage.Warning;
+            MessageBoxResult messageBoxResult = MessageBox.Show(messageBoxText, caption, button, icon);
+            if (messageBoxResult == MessageBoxResult.No)
             {
-                return -1;
-            }
-            else if (!String.IsNullOrEmpty(y) && String.IsNullOrEmpty(x))
-            {
-                return 1;
-            }
-            else
-            {
-                return String.Compare(x, y);
+                ScanSevenZipCheckbox.IsChecked = false;
             }
         }
     }
-
-    public class EmptyStringsAreLastDescending : IComparer<string>
-    {
-        public int Compare(string x, string y)
-        {
-            if (String.IsNullOrEmpty(y) && !String.IsNullOrEmpty(x))
-            {
-                return 1;
-            }
-            else if (!String.IsNullOrEmpty(y) && String.IsNullOrEmpty(x))
-            {
-                return -1;
-            }
-            else
-            {
-                return String.Compare(x, y);
-            }
-        }
-    }
-
-    public class NullValuesAreLast : IComparer<long?>
-    {
-        public int Compare(long? x, long? y)
-        {
-            if (y == null && x != null)
-            {
-                return -1;
-            }
-            else if (y != null && x == null)
-            {
-                return 1;
-            }
-            else if (y == null) //  && x == null => implicit
-            {
-                return 0;
-            }
-            else
-            {
-                return ((long)x).CompareTo((long)y);
-            }
-        }
-    }
-
-
-    public class NullValuesAreLastDescending : IComparer<long?>
-    {
-        public int Compare(long? x, long? y)
-        {
-            if (y == null && x != null)
-            {
-                return 1;
-            }
-            else if (y != null && x == null)
-            {
-                return -1;
-            }
-            else if (y == null) //  && x == null => implicit
-            {
-                return 0;
-            }
-            else
-            {
-                return ((long)x).CompareTo((long)y);
-            }
-        }
-    }
-
 }
