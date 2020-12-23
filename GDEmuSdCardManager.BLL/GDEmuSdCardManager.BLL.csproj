@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="IronPython" Version="2.7.10" />
-    <PackageReference Include="MedallionShell" Version="1.6.1" />
+    <PackageReference Include="MedallionShell" Version="1.6.2" />
+    <PackageReference Include="SharpCompress" Version="0.26.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -33,5 +33,9 @@
 
   <ItemGroup>
     <AdditionalFiles Include="..\.sonarlint\uggm\CSharp\SonarLint.xml" Link="SonarLint.xml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="temp_uncompressed\" />
   </ItemGroup>
 </Project>

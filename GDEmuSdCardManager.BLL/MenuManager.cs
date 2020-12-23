@@ -12,21 +12,16 @@ namespace GDEmuSdCardManager.BLL
     {
         public async static Task CreateIndex(string destinationFolder, IEnumerable<GameOnSd> gamesToIndex)
         {
-            if(!Directory.Exists(Path.Combine(destinationFolder, @"01\disc.cdi")))
+            if (!Directory.Exists(Path.Combine(destinationFolder, @"01\disc.cdi")))
             {
                 Directory.CreateDirectory(Path.Combine(destinationFolder, @"01"));
             }
 
             var sdFolders = Directory.EnumerateDirectories(destinationFolder);
 
-            foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
+            foreach(var folder in sdFolders.Where(f =>  Path.GetFileName(f).Contains("_") && !Directory.EnumerateFileSystemEntries(f).Any()))
             {
-                if(Directory.Exists(folder + "_") && !Directory.EnumerateFileSystemEntries(folder + "_").Any())
-                {
-                    Directory.Delete(folder + "_");
-                }
-
-                Directory.Move(folder, folder + "_");
+                Directory.Delete(folder);
             }
 
             var tempPath = @".\menu_tools_and_files\temp_content";
@@ -34,6 +29,16 @@ namespace GDEmuSdCardManager.BLL
 
             try
             {
+                foreach (var folder in sdFolders.Where(f => Path.GetFileName(f) != "01" && !Path.GetFileName(f).Contains("_") && int.TryParse(Path.GetFileName(f), out int _)))
+                {
+                    if (Directory.Exists(folder + "_"))
+                    {
+                        throw new Exception("The SD is populated with non-empty folders with underscore (_) in them. This might be temp folders created by the tool in a previous index creation. Please check manually what they contain and rename them with a correct name (01, 02, 03,... 999).");
+                    }
+
+                    Directory.Move(folder, folder + "_");
+                }
+
                 if (Directory.Exists(tempPath))
                 {
                     FileManager.RemoveAllFilesInDirectory(tempPath);
@@ -45,9 +50,9 @@ namespace GDEmuSdCardManager.BLL
 
                 await FileManager.CopyDirectoryContentToAnother(@".\menu_tools_and_files\content", tempPath, false);
 
-                for (short i = 2; i <= gamesToIndex.Count() + 1; i++)
+                for (short i = 2; i <= gamesToIndex.Count(g => g.GameName != "GDMENU") + 1; i++)
                 {
-                    var game = gamesToIndex.OrderBy(g => g.GameName).ElementAt(i - 2);
+                    var game = gamesToIndex.Where(g => g.GameName != "GDMENU").OrderBy(g => g.GameName).ElementAt(i - 2);
                     string index = i.ToString(SdCardManager.GetGdemuFolderNameFromIndex(i));
 
                     File.AppendAllText(tempListIniPath, Environment.NewLine);
@@ -82,13 +87,13 @@ namespace GDEmuSdCardManager.BLL
                 throw;
             }
 
-            for(int i = 0; i <= 2; i++ )
+            for (int i = 0; i <= 2; i++)
             {
                 File.AppendAllText(tempListIniPath, Environment.NewLine);
             }
 
             await Command
-                    .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G",  @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
+                    .Run(@".\menu_tools_and_files\mkisofs.exe", "-C", "0,11702", "-V", "GDMENU", "-G", @".\menu_tools_and_files\ip.bin", "-l", "-o", @".\menu_tools_and_files\disc.iso", tempPath)
                     .Task;
 
             await Command

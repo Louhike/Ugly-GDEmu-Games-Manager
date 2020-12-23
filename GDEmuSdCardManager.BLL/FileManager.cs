@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 
@@ -94,6 +96,59 @@ namespace GDEmuSdCardManager.BLL
             {
                 file.Delete();
             }
+        }
+
+        public static IEnumerable<string> EnumerateFolders(string path)
+        {
+            var subFolders = new List<string>();
+            subFolders.AddRange(Directory.EnumerateDirectories(
+                                path,
+                                "*",
+                                new EnumerationOptions
+                                {
+                                    IgnoreInaccessible = true,
+                                    RecurseSubdirectories = true,
+                                    ReturnSpecialDirectories = false
+                                }));
+
+            return subFolders;
+        }
+
+        public static IEnumerable<string> EnumerateArchives(string path)
+        {
+            var compressedFiles = new List<string>();
+            compressedFiles.AddRange(Directory.EnumerateFiles(
+                path,
+                "*",
+                 new EnumerationOptions
+                 {
+                     IgnoreInaccessible = true,
+                     RecurseSubdirectories = true,
+                     ReturnSpecialDirectories = false
+                 }).Where(p => p.EndsWith(".zip", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".7z", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".rar", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".bz", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".bz2", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".gz", StringComparison.InvariantCultureIgnoreCase)
+                 || p.EndsWith(".lz", StringComparison.InvariantCultureIgnoreCase)));
+
+            return compressedFiles;
+        }
+
+        public static IEnumerable<string> GetImageFilesPathInFolder(string folderPath)
+        {
+            return Directory
+                    .EnumerateFiles(
+                    folderPath,
+                    "*",
+                    new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = false,
+                        ReturnSpecialDirectories = false
+                    })
+                    .Where(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
         }
     }
 }

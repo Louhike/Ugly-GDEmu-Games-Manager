@@ -1,6 +1,8 @@
 ﻿using GDEmuSdCardManager.BLL.Extensions;
+using GDEmuSdCardManager.BLL.ImageReaders;
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
+using SharpCompress.Archives;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,11 +14,19 @@ namespace GDEmuSdCardManager.BLL
 {
     public class SdCardManager
     {
+
+        private readonly string tempPath = @".\temp_uncompressed\";
+
         public string DrivePath { get; set; }
 
         public SdCardManager(string path)
         {
             DrivePath = path;
+        }
+
+        public static string GetGdemuFolderNameFromIndex(short index)
+        {
+            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
         }
 
         public IEnumerable<GameOnSd> GetGames(out List<string> errors)
@@ -38,13 +48,16 @@ namespace GDEmuSdCardManager.BLL
 
             foreach (var subFolder in subFoldersList)
             {
-                var gdiFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
-                if (gdiFile != null)
+                var imageFile = Directory.EnumerateFiles(subFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
+                if (imageFile != null)
                 {
                     try
                     {
                         var game = GameManager.ExtractSdGameData(subFolder);
-                        gamesOnSdCard.Add(game);
+                        if (game != null)
+                        {
+                            gamesOnSdCard.Add(game);
+                        }
                     }
                     catch (Exception error)
                     {
@@ -85,73 +98,155 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
+            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
 
-            if (game.MustShrink)
+            try
             {
-                if (Directory.Exists(destinationFolder))
+                if (game.IsCompressed)
                 {
-                    FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                    oldImagePath = ExtractArchive(game);
+                }
+
+                if (game.MustShrink)
+                {
+                    if (Directory.Exists(destinationFolder))
+                    {
+                        FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(destinationFolder);
+                    }
+
+                    //var commandResult = await Command
+                    //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
+                    //    .Task;
+
+                    var cts = new CancellationTokenSource();
+                    cts.CancelAfter(TimeSpan.FromMinutes(2));
+                    Command command = null;
+                    try
+                    {
+                        command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldImagePath, destinationFolder);
+                        await command.Task.WaitOrCancel(cts.Token);
+                    }
+                    catch (OperationCanceledException ex)
+
+                    {
+                        if (command != null)
+                        {
+                            command.Kill();
+                        }
+
+                        throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
+                    }
+
+                    //if (!commandResult.Success)
+                    //{
+                    //    // There is always an error even if it's working, need find out why
+                    //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
+                    //}
+
+                    var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
+                    if (gdiPath == null)
+                    {
+                        throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
+                    }
+                    var newGdi = GdiReader.GetGdiFromFile(gdiPath);
+                    File.Delete(gdiPath);
+                    newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                    newGdi.RenameTrackFiles(destinationFolder);
                 }
                 else
                 {
-                    Directory.CreateDirectory(destinationFolder);
-                }
-
-                var oldGdiPath = Directory.EnumerateFiles(game.FullPath).Single(f => Path.GetExtension(f) == ".gdi");
-
-                //var commandResult = await Command
-                //    .Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder)
-                //    .Task;
-
-                var cts = new CancellationTokenSource();
-                cts.CancelAfter(TimeSpan.FromMinutes(2));
-                Command command = null;
-                try
-                {
-                    command = Command.Run(@".\gditools\dist\gditools_messily_tweaked.exe", oldGdiPath, destinationFolder);
-                    await command.Task.WaitOrCancel(cts.Token);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    if (command != null)
+                    if (game.IsGdi)
                     {
-                        command.Kill();
+                        if (!Directory.Exists(destinationFolder))
+                        {
+                            Directory.CreateDirectory(destinationFolder);
+                        }
+                        else
+                        {
+                            FileManager.RemoveAllFilesInDirectory(destinationFolder);
+                        }
+
+                        foreach (var track in game.GdiInfo.Tracks)
+                        {
+                            using (FileStream SourceStream = File.Open(game.FullPath + @"\" + track.FileName, FileMode.Open))
+                            {
+                                using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, track.FileName)))
+                                {
+                                    await SourceStream.CopyToAsync(DestinationStream);
+                                }
+                            }
+                        }
+
+                        string gdiPath = Directory.EnumerateFiles(game.FullPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                        var newGdi = GdiReader.GetGdiFromFile(gdiPath);
+                        newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
+                        newGdi.RenameTrackFiles(destinationFolder);
                     }
-
-                    throw new OperationCanceledException($"Timeout while shrinking {game.GameName}. You might need to copy it without shrinking.");
+                    else // CDI
+                    {
+                        using (FileStream SourceStream = File.Open(oldImagePath, FileMode.Open))
+                        {
+                            using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, "disc.cdi")))
+                            {
+                                await SourceStream.CopyToAsync(DestinationStream);
+                            }
+                        }
+                    }
                 }
-
-                //if (!commandResult.Success)
-                //{
-                //    // There is always an error even if it's working, need find out why
-                //    //throw new System.Exception("There was an error while shriking the GDI: " + commandResult.StandardError);
-                //}
-
-                var gdiPath = Directory.EnumerateFiles(destinationFolder).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
-                if(gdiPath == null)
-                {
-                    throw new OperationCanceledException($"Could not shrink {game.GameName}. You might need to copy it without shrinking.");
-                }
-                var newGdi = GameManager.GetGdiFromFile(gdiPath);
-                File.Delete(gdiPath);
-                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
-                newGdi.RenameTrackFiles(destinationFolder);
             }
-            else
+            catch
             {
-                await FileManager.CopyDirectoryContentToAnother(game.FullPath, destinationFolder, true);
+                // If there is a problem, we roll back and remove the folder on the SD card.
+                if (Directory.Exists(destinationFolder))
+                {
+                    Directory.Delete(destinationFolder);
+                }
 
-                var gdiPath = Directory.EnumerateFiles(destinationFolder).Single(f => Path.GetExtension(f) == ".gdi");
-                var newGdi = GameManager.GetGdiFromFile(gdiPath);
-                File.Delete(gdiPath);
-                newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
-                newGdi.RenameTrackFiles(destinationFolder);
+                throw;
+            }
+            finally
+            {
+                FileManager.RemoveAllFilesInDirectory(tempPath);
             }
         }
 
-        public static string GetGdemuFolderNameFromIndex(short index)
+        private string ExtractArchive(GameOnPc game)
         {
-            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+            string oldGdiPath;
+            var archive = ArchiveFactory.Open(game.FullPath);
+            var gpiEntry = archive.Entries.FirstOrDefault(e => e.Key.EndsWith(".gdi") || e.Key.EndsWith(".cdi"));
+            var separator = "/";
+            var pathParts = gpiEntry.Key.Split(separator);
+            List<IArchiveEntry> entriesToExtract = new List<IArchiveEntry>();
+            if (pathParts.Count() > 1)
+            {
+                string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
+                entriesToExtract.AddRange(ArchiveManager.RetreiveFilesFromArchiveStartingWith(archive, rootPath));
+            }
+            else
+            {
+                entriesToExtract.AddRange(archive.Entries.Where(e => !e.Key.Contains(separator) && !e.IsDirectory));
+            }
+
+            if (!Directory.Exists(tempPath))
+            {
+                Directory.CreateDirectory(tempPath);
+            }
+
+            foreach (var entry in entriesToExtract)
+            {
+                var fileName = entry.Key.Split(@"/").Last().Split(@"\").Last();
+                File.Create(tempPath + fileName).Close();
+                entry.WriteToFile(tempPath + fileName);
+            }
+
+            oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
+
+            return oldGdiPath;
         }
     }
 }

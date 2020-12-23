@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System.IO;
 using System.Text.Json;
 
 namespace GDEmuSdCardManager
@@ -9,10 +8,11 @@ namespace GDEmuSdCardManager
     /// </summary>
     public class UgdegmConfiguration
     {
-        public string PcDefaultPath { get; set; } = @"F:\Roms\Sega - Dreamcast";
+        public string PcDefaultPath { get; set; } = @"F:\Roms\Test";
         public string SdDefaultDrive { get; set; } = @"H:\";
         public string VersionUrl { get; set; } = "https://raw.githubusercontent.com/Louhike/Ugly-GDEmu-Games-Manager/master/GDEmuSdCardManager/VERSION";
         public string ReleasesUrl { get; set; } = "https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases";
+        public string IssuesUrl { get; set; } = "https://github.com/Louhike/Ugly-GDEmu-Games-Manager/issues";
 
         /// <summary>
         /// Load the configuration from the JSON file

@@ -1,5 +1,5 @@
-﻿using GDEmuSdCardManager.DTO.GDI;
-using System;
+﻿using GDEmuSdCardManager.DTO.CDI;
+using GDEmuSdCardManager.DTO.GDI;
 
 namespace GDEmuSdCardManager.DTO
 {
@@ -23,5 +23,7 @@ namespace GDEmuSdCardManager.DTO
         public string Producer { get; set; }
         public string GameName { get; set; }
         public Gdi GdiInfo { get; set; }
+        public Cdi CdiInfo { get; set; }
+        public bool IsGdi { get; set; }
     }
 }

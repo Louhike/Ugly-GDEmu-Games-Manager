@@ -9,26 +9,28 @@ Here: https://github.com/Louhike/Ugly-GDEmu-Games-Manager/releases
 
 ## Features
 It allows you to:
-* Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it.
+* Copy the games from your PC on your SD card. It will find what must the name of folder (02,03 ,04, etc.) and create it. If an empty folder already exists, it will use it. ONLY GDI IS SUPPORTED FOR NOW. CDI support is coming (it's done but I'm doing some testing).
 * Shrink (optionnaly) the games while copying them on your SD card. The files on your PC won't be shrinked.
 * Remove Games from your SD card.
-* Show which games on your PC are not on your SD card.
-* Generate a menu for GDEmu
+* Show which games on your PC are not on your SD card. The list is sortable on columns with symbols (▲, ▼ and ▬).
+* Generate a menu index for GDEmu (so it does not have to analyze the SD card at launch).
 * Files with stranges track names will be renamed while transfered in SD so they can work with SD Card Maker and GDEmu.
 * GDI file are rewritten while copied on the SD card to improve compatibility.
 
-It also shows the free space on your SD card and the size of your games.
+More features will be added other time. You can get a glimpse on what I'm planning to work on in the Issues tab.
 
-## What will change in future version 0.7.0
-* Option to sort games alphabetically on SD card. => already done in 0.6.3
-* Handle CDI games.
-* Display games which are on SD card but not on PC. Allow user to copy from SD to PC.
-* Allows game renaming
-* Add an option to force VGA
+## How to use it
+First, you must define the source(s) of your games on your PC. You must select folders containing sub-folders with one game in each. If a folder does not contain a game, it is ignored. As for now, you cannot add directly a folder with a game in it, you must add its parent. Then you select the drive which contains your SD card.
 
-## I'm thinking about it for 0.8.0
+When it's done, click on Scan. It will analyze all the folders and display the games it find on your PC. If the game is also on your SD, it will display the corresponding folder.
 
-* Automatically add covers if missing from https://archive.org/details/670dreamcastgamesjewelcoverpicturesconvertedto256x256.pvrfilesforgdemu.7z
+In the games list, there is three actions for each line. Copy (to SD), Remove (from SD) and Shrink (the game while copying on SD). Check the actions you want to apply, and then click on "Apply selected actions".
+
+By default, the option "Create menu index" is selected as most users would want that, you can untick though.
+
+The right panel is just a log to show what the program is doing and the errors (in red).
+
+You can resize each part the of software with dragging the grey bars.
 
 ## Credits
 The software is using the following tools made by others:
@@ -44,4 +46,4 @@ Thanks to Fed (https://github.com/PapiFed) for helping testing the software and 
 GNU General Public License v2.0
 
 ## If you want to support the developper
-_I don't need it_ but if you would like to help pay my coffee/beer while I'm working on this, you can donate here: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GU9TN9WV3PMHA&currency_code=EUR&source=url)
+__I don't need it__ but if you would like to help me pay my coffee/beer while I'm working on this, you can donate here: [![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://www.paypal.com/cgi-bin/webscr?cmd=_donations&business=GU9TN9WV3PMHA&currency_code=EUR&source=url)
