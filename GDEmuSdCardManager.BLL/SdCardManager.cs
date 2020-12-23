@@ -98,7 +98,7 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
-            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
+            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
 
             try
             {
@@ -190,6 +190,11 @@ namespace GDEmuSdCardManager.BLL
                     {
                         using (FileStream SourceStream = File.Open(oldImagePath, FileMode.Open))
                         {
+                            if(!Directory.Exists(destinationFolder))
+                            {
+                                Directory.CreateDirectory(destinationFolder);
+                            }
+
                             using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, "disc.cdi")))
                             {
                                 await SourceStream.CopyToAsync(DestinationStream);
