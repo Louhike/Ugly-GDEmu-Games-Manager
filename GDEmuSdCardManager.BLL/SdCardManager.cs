@@ -92,7 +92,7 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
-            string oldImagePath = game.FullPath;
+            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");//game.FullPath;
 
             try
             {
@@ -125,6 +125,7 @@ namespace GDEmuSdCardManager.BLL
                         await command.Task.WaitOrCancel(cts.Token);
                     }
                     catch (OperationCanceledException ex)
+
                     {
                         if (command != null)
                         {
@@ -165,7 +166,7 @@ namespace GDEmuSdCardManager.BLL
 
                         foreach (var track in game.GdiInfo.Tracks)
                         {
-                            using (FileStream SourceStream = File.Open(oldImagePath + @"\" + track.FileName, FileMode.Open))
+                            using (FileStream SourceStream = File.Open(game.FullPath + @"\" + track.FileName, FileMode.Open))
                             {
                                 using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, track.FileName)))
                                 {
@@ -174,7 +175,7 @@ namespace GDEmuSdCardManager.BLL
                             }
                         }
 
-                        string gdiPath = Directory.EnumerateFiles(oldImagePath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                        string gdiPath = Directory.EnumerateFiles(game.FullPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
                         var newGdi = GameManager.GetGdiFromFile(gdiPath);
                         newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
                         newGdi.RenameTrackFiles(destinationFolder);

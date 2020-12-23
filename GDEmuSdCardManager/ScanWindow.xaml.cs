@@ -69,7 +69,7 @@ namespace GDEmuSdCardManager
             }
 
 
-            CopyProgressBar.Maximum = subFolders.Count + compressedFiles.Count;
+            CopyProgressBar.Maximum = subFolders.Count + (compressedFiles.Count * 10);
             CopyProgressBar.Value = 0;
 
             var games = new List<GameOnPc>();
@@ -147,7 +147,7 @@ namespace GDEmuSdCardManager
                     WriteError($"Could not open archive {compressedFile}");
                     //stopwatch.Start();
                     //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    CopyProgressBar.Value++;
+                    CopyProgressBar.Value += 10;
                     CopyProgressBar.Refresh();
                     continue;
                 }
@@ -161,7 +161,7 @@ namespace GDEmuSdCardManager
                         if (archive.Type == SharpCompress.Common.ArchiveType.SevenZip && !viewModel.MustScanSevenZip)
                         {
                             WriteWarning($"Archive {compressedFile} ignored as it's a 7z file and the option isn't ticked.");
-                            CopyProgressBar.Value++;
+                            CopyProgressBar.Value += 10;
                             CopyProgressBar.Refresh();
                             continue;
                         }
@@ -173,7 +173,7 @@ namespace GDEmuSdCardManager
                         WriteError(error.Message);
                         //stopwatch.Start();
                         //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                        CopyProgressBar.Value++;
+                        CopyProgressBar.Value += 10;
                         CopyProgressBar.Refresh();
                         continue;
                     }
@@ -189,12 +189,12 @@ namespace GDEmuSdCardManager
                     WriteWarning($"Could not find GDI in archive {compressedFile} (CDI are ignored in archives)");
                     //stopwatch.Start();
                     //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    CopyProgressBar.Value++;
+                    CopyProgressBar.Value += 10;
                     CopyProgressBar.Refresh();
                     continue;
                 }
 
-                CopyProgressBar.Value++;
+                CopyProgressBar.Value += 10;
                 CopyProgressBar.Refresh();
                 //stopwatch.Start();
                 //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
