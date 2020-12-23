@@ -171,6 +171,8 @@ namespace GDEmuSdCardManager
             {
                 WriteSuccess($"Games copied");
             }
+
+            CloseButton.IsEnabled = true;
         }
 
         private GameOnPc RetrieveGameInFolder(string folderPath)
