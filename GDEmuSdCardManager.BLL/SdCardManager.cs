@@ -24,6 +24,11 @@ namespace GDEmuSdCardManager.BLL
             DrivePath = path;
         }
 
+        public static string GetGdemuFolderNameFromIndex(short index)
+        {
+            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
+        }
+
         public IEnumerable<GameOnSd> GetGames(out List<string> errors)
         {
             errors = new List<string>();
@@ -220,7 +225,7 @@ namespace GDEmuSdCardManager.BLL
             if (pathParts.Count() > 1)
             {
                 string rootPath = gpiEntry.Key.Replace(pathParts.Last(), string.Empty);
-                entriesToExtract.AddRange(ArchiveManager.RetreiveFilesFromArchiveStartingWith(archive, rootPath));//archive.Entries.Where(e => e.Key.StartsWith(rootPath) && !e.IsDirectory));
+                entriesToExtract.AddRange(ArchiveManager.RetreiveFilesFromArchiveStartingWith(archive, rootPath));
             }
             else
             {
@@ -242,11 +247,6 @@ namespace GDEmuSdCardManager.BLL
             oldGdiPath = Directory.EnumerateFiles(tempPath).Single(f => Path.GetExtension(f) == ".gdi");
 
             return oldGdiPath;
-        }
-
-        public static string GetGdemuFolderNameFromIndex(short index)
-        {
-            return index < 100 ? "D2" : index < 1000 ? "D3" : "D4";
         }
     }
 }

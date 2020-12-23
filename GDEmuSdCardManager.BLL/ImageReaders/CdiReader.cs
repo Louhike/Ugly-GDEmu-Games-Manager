@@ -57,9 +57,9 @@ namespace GDEmuSdCardManager.BLL.ImageReaders
 
         /// <summary>
         /// Read a CDI file.
-        /// Most of the code is based on cdirip.
+        /// Most of the code is based on cdirip (https://sourceforge.net/projects/cdimagetools/).
         /// </summary>
-        /// <param name="path"></param>
+        /// <param name="cdiStream"></param>
         /// <returns></returns>
         private Cdi GetCdiFromFile(Stream cdiStream)
         {

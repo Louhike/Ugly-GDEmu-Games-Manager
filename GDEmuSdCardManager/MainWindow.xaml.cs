@@ -35,6 +35,7 @@ namespace GDEmuSdCardManager
         private static readonly string ApplySelectedActionsButtonTextWhileCopying = "Applying ";
         private static readonly string ConfigurationPath = @".\config.json";
         private static readonly string pathSplitter = @"|";
+
         private bool IsSdCardMounted = false;
         private bool IsScanSuccessful = false;
         private bool HavePathsChangedSinceLastScanSuccessful = true;
@@ -43,10 +44,9 @@ namespace GDEmuSdCardManager
         private UgdegmConfiguration config;
         private string orderedBy = "Game";
         private bool isAscending = true;
-
         private IEnumerable<GameOnSd> gamesOnSdCard;
 
-        public ScanViewModel scanViewModel { get; set; }
+        public ScanViewModel ScanViewModel { get; set; }
 
         public MainWindow()
         {
@@ -212,8 +212,8 @@ namespace GDEmuSdCardManager
             GridViewColumnHeader columnClicked,
             string columnName,
             Func<GameOnPc, TValueType> propertyAccessor)
-            where TAscendingComparer: IComparer<TValueType>, new()
-            where TDescendingComparer: IComparer<TValueType>, new()
+            where TAscendingComparer : IComparer<TValueType>, new()
+            where TDescendingComparer : IComparer<TValueType>, new()
         {
             if (orderedBy == columnName && isAscending)
             {
@@ -387,13 +387,13 @@ namespace GDEmuSdCardManager
         {
             PcFoldersWithGdiListView.ItemsSource = new List<GameOnPc>();
 
-            scanViewModel = new ScanViewModel
+            ScanViewModel = new ScanViewModel
             {
                 MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
                 PcFolder = PcFolderTextBox.Text
             };
 
-            var scanWindows = new ScanWindow(scanViewModel);
+            var scanWindows = new ScanWindow(ScanViewModel);
             scanWindows.Show();
             scanWindows.LoadGamesOnPc();
             OnScanFinished();
@@ -402,9 +402,9 @@ namespace GDEmuSdCardManager
 
         private void OnScanFinished()
         {
-            if (scanViewModel.GamesOnPc != null)
+            if (ScanViewModel.GamesOnPc != null)
             {
-                PcFoldersWithGdiListView.ItemsSource = scanViewModel.GamesOnPc.OrderBy(f => f.GameName);
+                PcFoldersWithGdiListView.ItemsSource = ScanViewModel.GamesOnPc.OrderBy(f => f.GameName);
             }
         }
 
@@ -463,7 +463,10 @@ namespace GDEmuSdCardManager
             var games = pcItemsSource.Cast<GameOnPc>();
             foreach (GameOnPc game in games)
             {
-                var gameOnSd = gamesOnSdCard.FirstOrDefault(f => f.GameName == game.GameName && f.Disc == game.Disc && f.IsGdi == game.IsGdi);
+                var gameOnSd = gamesOnSdCard.FirstOrDefault(f =>
+                    f.GameName == game.GameName
+                    && f.Disc == game.Disc
+                    && f.IsGdi == game.IsGdi);
                 if (gameOnSd != null)
                 {
                     GameManager.LinkGameOnPcToGameOnSd(game, gameOnSd);
@@ -513,7 +516,7 @@ namespace GDEmuSdCardManager
 
         private async Task CopySelectedGames()
         {
-            scanViewModel = new ScanViewModel
+            ScanViewModel = new ScanViewModel
             {
                 GamesOnPc = PcFoldersWithGdiListView.Items.Cast<GameOnPc>().OrderBy(g => g.GameName),
                 MustScanSevenZip = ScanSevenZipCheckbox.IsChecked == true,
@@ -521,7 +524,7 @@ namespace GDEmuSdCardManager
                 SdDrive = SdFolderComboBox.SelectedItem as string
             };
 
-            var scanWindows = new ScanWindow(scanViewModel);
+            var scanWindows = new ScanWindow(ScanViewModel);
             scanWindows.Show();
             await scanWindows.CopySelectedGames();
         }
@@ -533,13 +536,17 @@ namespace GDEmuSdCardManager
                 var gamesToRemove = PcFoldersWithGdiListView
                     .Items
                     .Cast<GameOnPc>()
-                    .Where(g => !g.MustBeOnSd && gamesOnSdCard.Any(sg => sg.GameName == g.GameName && sg.Disc == g.Disc));
+                    .Where(g => !g.MustBeOnSd && gamesOnSdCard.Any(sg =>
+                        sg.GameName == g.GameName
+                        && sg.Disc == g.Disc));
                 WriteInfo($"Deleting {gamesToRemove.Count()} game(s) from SD card...");
                 foreach (GameOnPc itemToRemove in gamesToRemove)
                 {
                     WriteInfo($"Deleting {itemToRemove.GameName} {itemToRemove.Disc}...");
                     var gameOnSdToRemove = gamesOnSdCard
-                        .FirstOrDefault(g => g.GameName == itemToRemove.GameName && g.Disc == itemToRemove.Disc);
+                        .FirstOrDefault(g =>
+                            g.GameName == itemToRemove.GameName
+                            && g.Disc == itemToRemove.Disc);
 
                     FileManager.RemoveAllFilesInDirectory(gameOnSdToRemove.FullPath);
                 }
@@ -580,6 +587,7 @@ namespace GDEmuSdCardManager
             {
                 Foreground = color
             };
+
             InfoRichTextBox.Document.Blocks.Add(error);
             InfoRichTextBox.Focus();
             InfoRichTextBox.CaretPosition = InfoRichTextBox.CaretPosition.DocumentEnd;
