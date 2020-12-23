@@ -2,7 +2,6 @@
 using GDEmuSdCardManager.DTO;
 using Medallion.Shell;
 using SharpCompress.Archives;
-using SharpCompress.Common;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,9 +13,10 @@ namespace GDEmuSdCardManager.BLL
 {
     public class SdCardManager
     {
-        public string DrivePath { get; set; }
 
         private readonly string tempPath = @".\temp_uncompressed\";
+
+        public string DrivePath { get; set; }
 
         public SdCardManager(string path)
         {
@@ -92,7 +92,7 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
-            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");//game.FullPath;
+            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi");
 
             try
             {

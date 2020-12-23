@@ -42,40 +42,6 @@ namespace GDEmuSdCardManager.BLL
             return game;
         }
 
-        /// <summary>
-        /// Convert a <see cref="BaseGame"/> instance to a <see cref="GameOnPc"/> instance
-        /// </summary>
-        /// <param name="game"></param>
-        /// <returns></returns>
-        private static GameOnPc ConvertBaseGameToGameOnPc(BaseGame game)
-        {
-            if (game == null)
-            {
-                return null;
-            }
-
-            return new GameOnPc
-            {
-                BootFile = game.BootFile,
-                Crc = game.Crc,
-                Disc = game.Disc,
-                FormattedSize = game.FormattedSize,
-                FullPath = game.FullPath,
-                GameName = game.GameName,
-                GdiInfo = game.GdiInfo,
-                Hwid = game.Hwid,
-                IsGdi = game.IsGdi,
-                Maker = game.Maker,
-                Path = game.Path,
-                Perif = game.Perif,
-                Producer = game.Producer,
-                ProductN = game.ProductN,
-                ProductV = game.ProductV,
-                Region = game.Region,
-                ReleaseDate = game.ReleaseDate
-            };
-        }
-
         public static GameOnSd ExtractSdGameData(string folderPath)
         {
             var game = ExtractGameData(folderPath);
@@ -106,12 +72,81 @@ namespace GDEmuSdCardManager.BLL
             };
         }
 
+        public static Gdi GetGdiFromFile(string path)
+        {
+            var gdiContent = File.ReadAllLines(path);
+            return GetGdiFromStringContent(gdiContent);
+        }
+
+        public static void LinkGameOnPcToGameOnSd(GameOnPc gameOnPc, GameOnSd gameOnSd)
+        {
+            gameOnPc.IsInSdCard = true;
+            gameOnPc.MustBeOnSd = true;
+            gameOnPc.SdFolder = gameOnSd.Path;
+            gameOnPc.SdSize = FileManager.GetDirectorySize(gameOnSd.FullPath);
+            gameOnPc.SdFormattedSize = FileManager.GetDirectoryFormattedSize(gameOnSd.FullPath);
+        }
+
+        public static void UnLinkGameOnPcToGameOnSd(GameOnPc gameOnPc)
+        {
+            gameOnPc.IsInSdCard = false;
+            gameOnPc.MustBeOnSd = false;
+        }
+
+        private static string CleanName(string name)
+        {
+            string newName = name.Replace('\0', ' ');
+            newName = Regex.Replace(
+                Regex.Replace(
+                    Regex.Replace(newName, @"\p{C}+", string.Empty),
+                    @"\p{Po}+", string.Empty),
+                @"\p{S}+", string.Empty).Trim();
+
+            return newName;
+        }
+
+        /// <summary>
+        /// Convert a <see cref="BaseGame"/> instance to a <see cref="GameOnPc"/> instance
+        /// </summary>
+        /// <param name="game"></param>
+        /// <returns></returns>
+        private static GameOnPc ConvertBaseGameToGameOnPc(BaseGame game)
+        {
+            if (game == null)
+            {
+                return null;
+            }
+
+            // TODO: Use Automapper for mapping
+            return new GameOnPc
+            {
+                BootFile = game.BootFile,
+                Crc = game.Crc,
+                Disc = game.Disc,
+                FormattedSize = game.FormattedSize,
+                FullPath = game.FullPath,
+                GameName = game.GameName,
+                GdiInfo = game.GdiInfo,
+                Hwid = game.Hwid,
+                IsGdi = game.IsGdi,
+                Maker = game.Maker,
+                Path = game.Path,
+                Perif = game.Perif,
+                Producer = game.Producer,
+                ProductN = game.ProductN,
+                ProductV = game.ProductV,
+                Region = game.Region,
+                ReleaseDate = game.ReleaseDate,
+                Size = game.Size
+            };
+        }
+
         /// <summary>
         /// Extract game information from a folder
         /// </summary>
         /// <param name="folderPath"></param>
         /// <returns></returns>
-        public static BaseGame ExtractGameData(string folderPath)
+        private static BaseGame ExtractGameData(string folderPath)
         {
             var game = new BaseGame
             {
@@ -121,10 +156,10 @@ namespace GDEmuSdCardManager.BLL
                 FormattedSize = FileManager.GetDirectoryFormattedSize(folderPath)
             };
 
-            string gdiPath = Directory.EnumerateFiles(folderPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
-            if (!string.IsNullOrEmpty(gdiPath))
+            string imagePath = FileManager.GetImageFilesPathInFolder(folderPath).FirstOrDefault();
+            if (!string.IsNullOrEmpty(imagePath) && imagePath.EndsWith(".gdi"))
             {
-                game.GdiInfo = GetGdiFromFile(gdiPath);
+                game.GdiInfo = GetGdiFromFile(imagePath);
                 game.IsGdi = true;
                 var track3 = game.GdiInfo.Tracks.Single(t => t.TrackNumber == 3);
                 if (track3.Lba != 45000)
@@ -146,16 +181,12 @@ namespace GDEmuSdCardManager.BLL
                     ReadGameInfoFromBinaryData(game, fs);
                 }
             }
-            else
+            else if (!string.IsNullOrEmpty(imagePath) && imagePath.EndsWith(".cdi"))
             {
-                string cdiPath = Directory.EnumerateFiles(folderPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".cdi");
-                if (!string.IsNullOrEmpty(cdiPath))
+                using (var fs = File.OpenRead(imagePath))
                 {
-                    using (var fs = File.OpenRead(cdiPath))
-                    {
-                        game.CdiInfo = GetCdiFromFile(fs);
-                        RetrieveTrack3DataFromCdiStream(game, fs);
-                    }
+                    game.CdiInfo = GetCdiFromFile(fs);
+                    RetrieveTrack3DataFromCdiStream(game, fs);
                 }
             }
 
@@ -206,7 +237,6 @@ namespace GDEmuSdCardManager.BLL
                 var track3Entry = ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, track3.FileName);
                 using (var track3Stream = track3Entry.OpenEntryStream())
                 {
-                    //track3Entry.WriteTo(track3Stream);
                     if (isRawMode)
                     {
                         // We ignore the first line
@@ -217,6 +247,8 @@ namespace GDEmuSdCardManager.BLL
                     ReadGameInfoFromBinaryData(game, track3Stream);
                 }
             }
+            // Scanning a CDI inside an archive is too slow with the following code (the whole image is copied in memory),
+            // so it is commented until a better solution is found.
             //else
             //{
             //    var cdiEntry = archive.Entries.FirstOrDefault(f => f.Key.EndsWith(".cdi", StringComparison.InvariantCultureIgnoreCase));
@@ -266,76 +298,7 @@ namespace GDEmuSdCardManager.BLL
             ReadGameInfoFromBinaryData(game, fs);
         }
 
-        private static void ReadGameInfoFromBinaryData(BaseGame game, Stream fs)
-        {
-            byte[] hwidBuffer = new byte[16];
-            fs.Read(hwidBuffer, 0, 16);
-            game.Hwid = Encoding.UTF8.GetString(hwidBuffer).Replace('\0', ' ').Trim();
-
-            byte[] makerBuffer = new byte[16];
-            fs.Read(makerBuffer, 0, 16);
-            game.Maker = Encoding.UTF8.GetString(makerBuffer).Replace('\0', ' ').Trim();
-
-            byte[] crcBuffer = new byte[5];
-            fs.Read(crcBuffer, 0, 5);
-            game.Crc = Encoding.UTF8.GetString(crcBuffer).Replace('\0', ' ').Trim();
-
-            byte[] discBuffer = new byte[11];
-            fs.Read(discBuffer, 0, 11);
-            game.Disc = Encoding.UTF8.GetString(discBuffer).Replace('\0', ' ').Trim();
-
-            byte[] regionBuffer = new byte[8];
-            fs.Read(regionBuffer, 0, 8);
-            game.Region = Encoding.UTF8.GetString(regionBuffer).Replace('\0', ' ').Trim();
-
-            byte[] perifBuffer = new byte[8];
-            fs.Read(perifBuffer, 0, 8);
-            game.Perif = Encoding.UTF8.GetString(perifBuffer).Replace('\0', ' ').Trim();
-
-            byte[] productNBuffer = new byte[10];
-            fs.Read(productNBuffer, 0, 10);
-            game.ProductN = Encoding.UTF8.GetString(productNBuffer).Replace('\0', ' ').Trim();
-
-            byte[] productVBuffer = new byte[6];
-            fs.Read(productVBuffer, 0, 6);
-            game.ProductV = Encoding.UTF8.GetString(productVBuffer).Replace('\0', ' ').Trim();
-
-            byte[] releaseDateBuffer = new byte[16];
-            fs.Read(releaseDateBuffer, 0, 16);
-            game.ReleaseDate = Encoding.UTF8.GetString(releaseDateBuffer).Replace('\0', ' ').Trim();
-
-            byte[] bootFileBuffer = new byte[16];
-            fs.Read(bootFileBuffer, 0, 16);
-            game.BootFile = Encoding.UTF8.GetString(bootFileBuffer).Replace('\0', ' ').Trim();
-
-            byte[] producerBuffer = new byte[16];
-            fs.Read(producerBuffer, 0, 16);
-            game.Producer = Encoding.UTF8.GetString(producerBuffer).Replace('\0', ' ').Trim();
-
-            byte[] gameNameBuffer = new byte[128];
-            fs.Read(gameNameBuffer, 0, 128);
-            game.GameName = CleanName(Encoding.UTF8.GetString(gameNameBuffer));
-        }
-
-        public static string CleanName(string name)
-        {
-            string newName = name.Replace('\0', ' ');
-            newName = Regex.Replace(
-                Regex.Replace(
-                    Regex.Replace(newName, @"\p{C}+", string.Empty),
-                    @"\p{Po}+", string.Empty),
-                @"\p{S}+", string.Empty).Trim();
-
-            return newName;
-        }
-
-        public static Gdi GetGdiFromFile(string path)
-        {
-            var gdiContent = File.ReadAllLines(path);
-            return GetGdiFromStringContent(gdiContent);
-        }
-
-        public static Gdi GetGdiFromStringContent(IEnumerable<string> gdiContent)
+        private static Gdi GetGdiFromStringContent(IEnumerable<string> gdiContent)
         {
             gdiContent = gdiContent
                 .Where(l => !string.IsNullOrEmpty(l))
@@ -380,7 +343,7 @@ namespace GDEmuSdCardManager.BLL
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        public static Cdi GetCdiFromFile(Stream cdiStream)
+        private static Cdi GetCdiFromFile(Stream cdiStream)
         {
             var cdi = new Cdi();
 
@@ -545,6 +508,57 @@ namespace GDEmuSdCardManager.BLL
             }
 
             return cdi;
+        }
+
+        private static void ReadGameInfoFromBinaryData(BaseGame game, Stream fs)
+        {
+            byte[] hwidBuffer = new byte[16];
+            fs.Read(hwidBuffer, 0, 16);
+            game.Hwid = Encoding.UTF8.GetString(hwidBuffer).Replace('\0', ' ').Trim();
+
+            byte[] makerBuffer = new byte[16];
+            fs.Read(makerBuffer, 0, 16);
+            game.Maker = Encoding.UTF8.GetString(makerBuffer).Replace('\0', ' ').Trim();
+
+            byte[] crcBuffer = new byte[5];
+            fs.Read(crcBuffer, 0, 5);
+            game.Crc = Encoding.UTF8.GetString(crcBuffer).Replace('\0', ' ').Trim();
+
+            byte[] discBuffer = new byte[11];
+            fs.Read(discBuffer, 0, 11);
+            game.Disc = Encoding.UTF8.GetString(discBuffer).Replace('\0', ' ').Trim();
+
+            byte[] regionBuffer = new byte[8];
+            fs.Read(regionBuffer, 0, 8);
+            game.Region = Encoding.UTF8.GetString(regionBuffer).Replace('\0', ' ').Trim();
+
+            byte[] perifBuffer = new byte[8];
+            fs.Read(perifBuffer, 0, 8);
+            game.Perif = Encoding.UTF8.GetString(perifBuffer).Replace('\0', ' ').Trim();
+
+            byte[] productNBuffer = new byte[10];
+            fs.Read(productNBuffer, 0, 10);
+            game.ProductN = Encoding.UTF8.GetString(productNBuffer).Replace('\0', ' ').Trim();
+
+            byte[] productVBuffer = new byte[6];
+            fs.Read(productVBuffer, 0, 6);
+            game.ProductV = Encoding.UTF8.GetString(productVBuffer).Replace('\0', ' ').Trim();
+
+            byte[] releaseDateBuffer = new byte[16];
+            fs.Read(releaseDateBuffer, 0, 16);
+            game.ReleaseDate = Encoding.UTF8.GetString(releaseDateBuffer).Replace('\0', ' ').Trim();
+
+            byte[] bootFileBuffer = new byte[16];
+            fs.Read(bootFileBuffer, 0, 16);
+            game.BootFile = Encoding.UTF8.GetString(bootFileBuffer).Replace('\0', ' ').Trim();
+
+            byte[] producerBuffer = new byte[16];
+            fs.Read(producerBuffer, 0, 16);
+            game.Producer = Encoding.UTF8.GetString(producerBuffer).Replace('\0', ' ').Trim();
+
+            byte[] gameNameBuffer = new byte[128];
+            fs.Read(gameNameBuffer, 0, 128);
+            game.GameName = CleanName(Encoding.UTF8.GetString(gameNameBuffer));
         }
     }
 }

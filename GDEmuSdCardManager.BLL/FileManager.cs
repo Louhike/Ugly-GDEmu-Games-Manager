@@ -135,5 +135,20 @@ namespace GDEmuSdCardManager.BLL
 
             return compressedFiles;
         }
+
+        public static IEnumerable<string> GetImageFilesPathInFolder(string folderPath)
+        {
+            return Directory
+                    .EnumerateFiles(
+                    folderPath,
+                    "*",
+                    new EnumerationOptions
+                    {
+                        IgnoreInaccessible = true,
+                        RecurseSubdirectories = false,
+                        ReturnSpecialDirectories = false
+                    })
+                    .Where(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
+        }
     }
 }

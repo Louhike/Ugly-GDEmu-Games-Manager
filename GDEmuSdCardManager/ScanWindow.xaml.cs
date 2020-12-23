@@ -5,15 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace GDEmuSdCardManager
@@ -54,12 +49,6 @@ namespace GDEmuSdCardManager
                 }
             }
 
-            if (!viewModel.IsScanSuccessful)
-            {
-                CloseButton.IsEnabled = true;
-                return;
-            }
-
             List<string> subFolders = new List<string>();
             List<string> compressedFiles = new List<string>();
             foreach (string path in paths)
@@ -68,7 +57,8 @@ namespace GDEmuSdCardManager
                 compressedFiles.AddRange(FileManager.EnumerateArchives(path));
             }
 
-
+            // Archives take more time to be scanned so we give them a bigger value
+            // for the progress bar.
             CopyProgressBar.Maximum = subFolders.Count + (compressedFiles.Count * 10);
             CopyProgressBar.Value = 0;
 
@@ -76,128 +66,26 @@ namespace GDEmuSdCardManager
 
             foreach (var subFolder in subFolders)
             {
-                if (Directory
-                    .EnumerateFiles(
-                    subFolder,
-                    "*",
-                    new EnumerationOptions
-                    {
-                        IgnoreInaccessible = true,
-                        RecurseSubdirectories = false,
-                        ReturnSpecialDirectories = false
-                    })
-                    .Count(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi") > 1)
+                var game = RetrieveGameInFolder(subFolder);
+
+                if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
                 {
-                    WriteError($"You have more than one GDI/CDI file in the folder {subFolder}. Please make sure you only have one GDI/CDI per folder.");
-                    CopyProgressBar.Value++;
-                    CopyProgressBar.Refresh();
-                    continue;
+                    WriteInfo($"Found game {game.GameName} in folder {subFolder}");
+                    games.Add(game);
                 }
-
-                var imageFile = Directory.EnumerateFiles(
-                    subFolder,
-                    "*",
-                    new EnumerationOptions
-                    {
-                        IgnoreInaccessible = true,
-                        RecurseSubdirectories = false,
-                        ReturnSpecialDirectories = false
-                    })
-                    .FirstOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
-
-                if (imageFile != null)
-                {
-                    GameOnPc game;
-                    try
-                    {
-                        game = GameManager.ExtractPcGameData(subFolder);
-                    }
-                    catch (Exception error)
-                    {
-                        WriteError(error.Message);
-                        CopyProgressBar.Value++;
-                        CopyProgressBar.Refresh();
-                        continue;
-                    }
-
-                    if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
-                    {
-                        WriteInfo($"Found game {game.GameName} in folder {subFolder}");
-                        games.Add(game);
-                    }
-                }
-
-                CopyProgressBar.Value++;
-                CopyProgressBar.Refresh();
             }
 
             foreach (var compressedFile in compressedFiles)
             {
-                WriteInfo($"Checking archive {compressedFile}...");
-                //Stopwatch stopwatch = new Stopwatch();
-                //stopwatch.Start();
-                //WriteInfo($"Reading archive {compressedFile}");
-                IArchive archive;
-                try
+                var game = RetrieveGameInArchive(compressedFile);
+
+                if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
                 {
-                    archive = ArchiveFactory.Open(new FileInfo(compressedFile));
-                }
-                catch (Exception ex)
-                {
-                    WriteError($"Could not open archive {compressedFile}");
-                    //stopwatch.Start();
-                    //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    CopyProgressBar.Value += 10;
-                    CopyProgressBar.Refresh();
-                    continue;
+                    WriteInfo($"Found game {game.GameName} in archive {compressedFile}");
+                    games.Add(game);
                 }
 
-                if (ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") != null)
-                {
-                    GameOnPc game;
-
-                    try
-                    {
-                        if (archive.Type == SharpCompress.Common.ArchiveType.SevenZip && !viewModel.MustScanSevenZip)
-                        {
-                            WriteWarning($"Archive {compressedFile} ignored as it's a 7z file and the option isn't ticked.");
-                            CopyProgressBar.Value += 10;
-                            CopyProgressBar.Refresh();
-                            continue;
-                        }
-
-                        game = GameManager.ExtractPcGameDataFromArchive(compressedFile, archive);
-                    }
-                    catch (Exception error)
-                    {
-                        WriteError(error.Message);
-                        //stopwatch.Start();
-                        //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                        CopyProgressBar.Value += 10;
-                        CopyProgressBar.Refresh();
-                        continue;
-                    }
-
-                    if (game != null && !games.Any(g => g.GameName == game.GameName && g.Disc == game.Disc && g.IsGdi == game.IsGdi))
-                    {
-                        WriteInfo($"Found game {game.GameName} in archive {compressedFile}");
-                        games.Add(game);
-                    }
-                }
-                else
-                {
-                    WriteWarning($"Could not find GDI in archive {compressedFile} (CDI are ignored in archives)");
-                    //stopwatch.Start();
-                    //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
-                    CopyProgressBar.Value += 10;
-                    CopyProgressBar.Refresh();
-                    continue;
-                }
-
-                CopyProgressBar.Value += 10;
-                CopyProgressBar.Refresh();
-                //stopwatch.Start();
-                //WriteInfo($"Finished reading archive {compressedFile}. Time elapsed: {stopwatch.Elapsed}");
+                
             }
 
             viewModel.GamesOnPc = games.OrderBy(f => f.GameName);
@@ -285,6 +173,92 @@ namespace GDEmuSdCardManager
             }
         }
 
+        private GameOnPc RetrieveGameInFolder(string folderPath)
+        {
+            GameOnPc game = null;
+            var imageFiles = FileManager.GetImageFilesPathInFolder(folderPath);
+            if (imageFiles.Count() > 1)
+            {
+                WriteError($"You have more than one GDI/CDI file in the folder {folderPath}. Please make sure you only have one GDI/CDI per folder.");
+                CopyProgressBar.Value++;
+                CopyProgressBar.Refresh();
+                return null;
+            }
+
+            if (imageFiles.Any())
+            {
+                try
+                {
+                    game = GameManager.ExtractPcGameData(folderPath);
+                }
+                catch (Exception error)
+                {
+                    WriteError(error.Message);
+                    CopyProgressBar.Value++;
+                    CopyProgressBar.Refresh();
+                    return null;
+                }
+            }
+
+            CopyProgressBar.Value++;
+            CopyProgressBar.Refresh();
+
+            return game;
+        }
+
+        private GameOnPc RetrieveGameInArchive(string compressedFilePath)
+        {
+            GameOnPc game = null;
+            WriteInfo($"Checking archive {compressedFilePath}...");
+            IArchive archive;
+            try
+            {
+                archive = ArchiveFactory.Open(new FileInfo(compressedFilePath));
+            }
+            catch (Exception ex)
+            {
+                WriteError($"Could not open archive {compressedFilePath}. Error: {ex.Message}");
+                CopyProgressBar.Value += 10;
+                CopyProgressBar.Refresh();
+                return null;
+            }
+
+            if (ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") == null)
+            {
+                WriteWarning($"Could not find GDI in archive {compressedFilePath} (CDI are ignored in archives)");
+                CopyProgressBar.Value += 10;
+                CopyProgressBar.Refresh();
+                return null;
+            }
+            else
+            {
+
+                try
+                {
+                    if (archive.Type == SharpCompress.Common.ArchiveType.SevenZip && !viewModel.MustScanSevenZip)
+                    {
+                        WriteWarning($"Archive {compressedFilePath} ignored as it's a 7z file and the option isn't ticked.");
+                        CopyProgressBar.Value += 10;
+                        CopyProgressBar.Refresh();
+                        return null;
+                    }
+
+                    game = GameManager.ExtractPcGameDataFromArchive(compressedFilePath, archive);
+                }
+                catch (Exception ex)
+                {
+                    WriteError(ex.Message);
+                    CopyProgressBar.Value += 10;
+                    CopyProgressBar.Refresh();
+                    return null;
+                }
+            }
+            CopyProgressBar.Value += 10;
+            CopyProgressBar.Refresh();
+
+            return game;
+        }
+
         private void WriteError(string message)
         {
             WriteMessageInRichTextBox(message, Brushes.Red);
@@ -326,9 +300,7 @@ namespace GDEmuSdCardManager
 
     public static class ExtensionMethods
     {
-
         private static Action EmptyDelegate = delegate () { };
-
 
         public static void Refresh(this UIElement uiElement)
         {

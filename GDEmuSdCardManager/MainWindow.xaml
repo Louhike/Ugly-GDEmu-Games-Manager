@@ -6,121 +6,114 @@
         xmlns:local="clr-namespace:GDEmuSdCardManager"
         mc:Ignorable="d"
         WindowStyle="SingleBorderWindow"
-        Title="UGGM - Ugly GDEmu Games Manager" Height="480" Width="640">
+        Title="UGGM - Ugly GDEmu Games Manager" Height="480" Width="800">
     <DockPanel>
         <StatusBar DockPanel.Dock="Bottom" Height="40">
-            <Label x:Name="CopyProgressLabel" Content="Progress:" Visibility="Visible" HorizontalAlignment="Left" Width="58" Height="30" VerticalAlignment="Center" />
-            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" HorizontalAlignment="Left" Width="123" Height="30" VerticalAlignment="Center" />
-            <Button Content="Open logs" Height="30" Width="60" HorizontalAlignment="Left" Click="OpenLogsButton_Click"/>
+            <Label x:Name="CopyProgressLabel" Content="Progress:" Visibility="Visible" VerticalAlignment="Center" HorizontalAlignment="Left" Width="58" Height="30" />
+            <ProgressBar x:Name="CopyProgressBar" Visibility="Visible" VerticalAlignment="Center" HorizontalAlignment="Left" Width="123" Height="30" />
+            <Button Content="Open logs" Click="OpenLogsButton_Click" HorizontalAlignment="Left" Height="30" Width="60"/>
             <RichTextBox x:Name="InfoRichTextBox" IsReadOnly="True" HorizontalAlignment="Stretch" Block.LineHeight="1" Height="30" VerticalScrollBarVisibility="Visible">
                 <FlowDocument />
             </RichTextBox>
         </StatusBar>
-        <Grid x:Name="MainColumnsExpanderGrid">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition />
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="180" />
-            </Grid.ColumnDefinitions>
-            <Grid x:Name="GamesExpanderGrid" Background="#FFE5E5E5" Grid.ColumnSpan="3">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="100" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition />
-                </Grid.RowDefinitions>
+        <Grid x:Name="GamesExpanderGrid" Background="#FFE5E5E5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition />
+            </Grid.RowDefinitions>
 
-                <Expander
+            <Expander
                 x:Name="FoldersExpander"
                 Header="Games folders and SD drive"
                 Grid.Row="0"
                 ExpandDirection="Up"
                 IsExpanded="True">
-                    <Grid Background="#FFE5E5E5">
-                        <Label Content="Games directories" HorizontalAlignment="Left" Margin="5,4,0,0" VerticalAlignment="Top" Width="98" Height="22" Padding="2" />
-                        <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" Margin="105,4,227,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="22" />
-                        <Button x:Name="PcAddButton" Content="Browse" HorizontalAlignment="Right" Margin="0,4,119,0" VerticalAlignment="Top" Click="PcAddButton_Click" Height="22"  Width="103" />
-                        <Label Content="SD card root" HorizontalAlignment="Left" Padding="2" Margin="5,29,0,0" VerticalAlignment="Top" Width="98" Height="22" />
-                        <ComboBox x:Name="SdFolderComboBox" HorizontalAlignment="Left" Margin="105,29,0,0" VerticalAlignment="Top" Width="45" Height="22" />
-                        <Button x:Name="ScanButton" VerticalAlignment="Top" Content="Scan" Margin="0,4,7,0" Click="LoadAllButton_Click" Height="22" HorizontalAlignment="Right" Width="103" />
-                        <Button x:Name="UndoButton" VerticalAlignment="Top" Content="Undo" Margin="0,29,7,0" Click="LoadAllButton_Click" Height="22" HorizontalAlignment="Right" Width="103" />
-                        <Label x:Name="SdSpaceLabel" Content="" Margin="154,29,0,0" HorizontalAlignment="Left" Padding="2" Width="118" Height="22" VerticalAlignment="Top" />
-                        <CheckBox x:Name="CreateMenuIndexCheckbox" IsChecked="True" Content="Menu index" Margin="0,56,131,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
-                        <CheckBox x:Name="ScanSevenZipCheckbox" IsChecked="False" Checked="ScanSevenZipCheckbox_Checked" Content="Scan 7z files" Margin="0,56,230,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
-                        <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply" Margin="0,29,119,0" Click="ApplySelectedActions" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" />
-                        <Button x:Name="UndoButton_Copy" VerticalAlignment="Top" Content="Help" Margin="0,55,7,0" Click="HelpButton_Click" Height="22" HorizontalAlignment="Right" Width="103" />
-                    </Grid>
-                </Expander>
+                <Grid Background="#FFE5E5E5">
+                    <Label Content="Games directories" HorizontalAlignment="Left" Margin="5,4,0,0" VerticalAlignment="Top" Width="98" Height="22" Padding="2" />
+                    <TextBox x:Name="PcFolderTextBox" BorderBrush="LightGray" Margin="105,4,227,0" TextWrapping="Wrap" VerticalAlignment="Top" Height="22" />
+                    <Button x:Name="PcAddButton" Click="PcAddButton_Click" Content="Browse" HorizontalAlignment="Right" Margin="0,4,119,0" VerticalAlignment="Top" Height="22"  Width="103" />
+                    <Button x:Name="ScanButton" Click="LoadAllButton_Click" VerticalAlignment="Top" Content="Scan" Margin="0,4,7,0" Height="22" HorizontalAlignment="Right" Width="103" />
+                    <Label Content="SD card root" VerticalAlignment="Top" HorizontalAlignment="Left" Padding="2" Margin="5,29,0,0" Width="98" Height="22" />
+                    <ComboBox x:Name="SdFolderComboBox" VerticalAlignment="Top" HorizontalAlignment="Left" Margin="105,29,0,0" Width="45" Height="22" />
+                    <Label x:Name="SdSpaceLabel" Content="" Margin="154,29,0,0" HorizontalAlignment="Left" Padding="2" Width="118" Height="22" VerticalAlignment="Top" />
+                    <Button x:Name="ApplySelectedActionsButton" IsEnabled="False" Content="Apply" Margin="0,29,119,0" Click="ApplySelectedActions" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="103" />
+                    <Button x:Name="UndoButton" Click="LoadAllButton_Click" VerticalAlignment="Top" HorizontalAlignment="Right" Content="Undo" Margin="0,29,7,0" Height="22" Width="103" />
+                    <CheckBox x:Name="ScanSevenZipCheckbox" IsChecked="False" Checked="ScanSevenZipCheckbox_Checked" Content="Scan 7z files" Margin="0,56,230,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
+                    <CheckBox x:Name="CreateMenuIndexCheckbox" IsChecked="True" Content="Menu index" Margin="0,56,131,0" Height="22" VerticalAlignment="Top" HorizontalAlignment="Right" Width="92" />
+                    <Button x:Name="HelpButton" Click="HelpButton_Click" VerticalAlignment="Top" HorizontalAlignment="Right" Content="Help" Margin="0,55,7,0" Height="22" Width="103" />
+                </Grid>
+            </Expander>
 
-                <GridSplitter Name="GamesExpanderGridSplitter"
+            <GridSplitter Name="GamesExpanderGridSplitter"
                          ResizeDirection="Rows"
                          HorizontalAlignment="Stretch"
                          Grid.Row="1"
                          Height="5"
                          Background="Gray" />
 
-                <Expander
+            <Expander
                 x:Name="GamesExpander"
                 Header="Games"
                 Grid.Row="2"
                 IsExpanded="True">
-                    <Grid Background="#FFE5E5E5">
-                        <ListView x:Name="PcFoldersWithGdiListView">
-                            <ListView.View>
-                                <GridView>
-                                    <GridViewColumn x:Name="GameNameColumn" DisplayMemberBinding=
+                <Grid Background="#FFE5E5E5">
+                    <ListView x:Name="PcFoldersWithGdiListView">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn x:Name="GameNameColumn" DisplayMemberBinding=
                                     "{Binding Path=GameName}"
                                     Header="Game ▲" Width="140" />
-                                    <GridViewColumn DisplayMemberBinding=
+                                <GridViewColumn DisplayMemberBinding=
                                     "{Binding Path=FormattedDiscNumber}"
                                     Header="Disc" Width="30" />
-                                    <GridViewColumn x:Name="PathColumn" DisplayMemberBinding=
+                                <GridViewColumn x:Name="PathColumn" DisplayMemberBinding=
                                     "{Binding Path=Path}"
                                     Header="Folder/Archive ▬" Width="200" />
-                                    <GridViewColumn x:Name="FormattedSizeColumn" DisplayMemberBinding=
+                                <GridViewColumn x:Name="FormattedSizeColumn" DisplayMemberBinding=
                                     "{Binding Path=FormattedSize}"
                                     Header="Size on PC ▬" Width="75" />
-                                    <GridViewColumn x:Name="SdFolderColumn" DisplayMemberBinding=
+                                <GridViewColumn x:Name="SdFolderColumn" DisplayMemberBinding=
                                     "{Binding Path=SdFolder}"
                                     Header="SD folder ▬" Width="65" />
-                                    <GridViewColumn x:Name="SdSizeColumn" DisplayMemberBinding=
+                                <GridViewColumn x:Name="SdSizeColumn" DisplayMemberBinding=
                                     "{Binding Path=SdFormattedSize}"
                                     Header="Size on SD ▬" Width="75" />
-                                    <GridViewColumn
+                                <GridViewColumn
                                     Header="On SD?" Width="50">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="5, 0" IsChecked="{Binding MustBeOnSd}">
-                                                </CheckBox>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                    <GridViewColumn
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Margin="5, 0" IsChecked="{Binding MustBeOnSd}">
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                                <GridViewColumn
                                     Header="Shrink?" Width="50">
-                                        <GridViewColumn.CellTemplate>
-                                            <DataTemplate>
-                                                <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}">
-                                                    <CheckBox.Style>
-                                                        <Style TargetType="CheckBox">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding MustBeOnSd}" Value="False">
-                                                                    <Setter Property="IsEnabled" Value="False" />
-                                                                </DataTrigger>
-                                                                <DataTrigger Binding="{Binding IsGdi}" Value="False">
-                                                                    <Setter Property="Visibility" Value="Hidden" />
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </CheckBox.Style>
-                                                </CheckBox>
-                                            </DataTemplate>
-                                        </GridViewColumn.CellTemplate>
-                                    </GridViewColumn>
-                                </GridView>
-                            </ListView.View>
-                        </ListView>
-                    </Grid>
-                </Expander>
-            </Grid>
+                                    <GridViewColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <CheckBox Margin="5, 0" IsChecked="{Binding MustShrink}">
+                                                <CheckBox.Style>
+                                                    <Style TargetType="CheckBox">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding MustBeOnSd}" Value="False">
+                                                                <Setter Property="IsEnabled" Value="False" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsGdi}" Value="False">
+                                                                <Setter Property="Visibility" Value="Hidden" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </CheckBox.Style>
+                                            </CheckBox>
+                                        </DataTemplate>
+                                    </GridViewColumn.CellTemplate>
+                                </GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Grid>
+            </Expander>
         </Grid>
     </DockPanel>
 </Window>
