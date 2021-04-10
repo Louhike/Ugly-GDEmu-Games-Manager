@@ -79,7 +79,14 @@ namespace GDEmuSdCardManager.BLL.ImageReaders
             cdiStream.Read(buffer4, 0, 4);
             uint headerOffset = BitConverter.ToUInt32(buffer4);
 
-            cdiStream.Seek(length - headerOffset, SeekOrigin.Begin);
+            if (cdiVersion >= 2147483654)
+            {
+                cdiStream.Seek(length - headerOffset, SeekOrigin.Begin);
+            }
+            else
+            {
+                cdiStream.Seek(headerOffset, SeekOrigin.Begin);
+            }
 
             cdiStream.Read(buffer2, 0, 2);
             ushort numberOfSessions = BitConverter.ToUInt16(buffer2);
