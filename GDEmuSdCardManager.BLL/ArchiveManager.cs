@@ -23,5 +23,12 @@ namespace GDEmuSdCardManager.BLL
             e.Key != null
             && e.Key.EndsWith(fileNameEnd, StringComparison.InvariantCultureIgnoreCase));
         }
+
+        public static int CountFilesFromArchiveEndingWith(IArchive archive, string fileNameEnd)
+        {
+            return archive.Entries.Count(e =>
+            e.Key != null
+            && e.Key.EndsWith(fileNameEnd, StringComparison.InvariantCultureIgnoreCase));
+        }
     }
 }

@@ -225,9 +225,9 @@ namespace GDEmuSdCardManager
                 return null;
             }
 
-            if (ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") == null)
+            if (ArchiveManager.CountFilesFromArchiveEndingWith(archive, ".gdi") > 1 || ArchiveManager.RetreiveUniqueFileFromArchiveEndingWith(archive, ".gdi") == null)
             {
-                WriteWarning($"Could not find GDI in archive {compressedFilePath} (CDI are ignored in archives)");
+                WriteWarning($"Could not find GDI in archive {compressedFilePath} or there is more than one GDI (CDI are ignored in archives)");
                 CopyProgressBar.Value += 10;
                 CopyProgressBar.Refresh();
                 return null;
