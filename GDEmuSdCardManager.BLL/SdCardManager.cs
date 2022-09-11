@@ -98,13 +98,17 @@ namespace GDEmuSdCardManager.BLL
         {
             string format = GetGdemuFolderNameFromIndex(destinationFolderIndex);
             string destinationFolder = Path.GetFullPath(DrivePath + destinationFolderIndex.ToString(format));
-            string oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
+            string oldImagePath = string.Empty;
 
             try
             {
                 if (game.IsCompressed)
                 {
                     oldImagePath = ExtractArchive(game);
+                }
+                else
+                {
+                    oldImagePath = Directory.EnumerateFiles(game.FullPath).SingleOrDefault(f => Path.GetExtension(f) == ".gdi" || Path.GetExtension(f) == ".cdi");
                 }
 
                 if (game.MustShrink)
@@ -170,9 +174,11 @@ namespace GDEmuSdCardManager.BLL
                             FileManager.RemoveAllFilesInDirectory(destinationFolder);
                         }
 
+                        string gameFilesFolderPath = game.IsCompressed ? tempPath : game.FullPath;
+
                         foreach (var track in game.GdiInfo.Tracks)
                         {
-                            using (FileStream SourceStream = File.Open(game.FullPath + @"\" + track.FileName, FileMode.Open))
+                            using (FileStream SourceStream = File.Open(gameFilesFolderPath + @"\" + track.FileName, FileMode.Open))
                             {
                                 using (FileStream DestinationStream = File.Create(Path.Combine(destinationFolder, track.FileName)))
                                 {
@@ -181,7 +187,9 @@ namespace GDEmuSdCardManager.BLL
                             }
                         }
 
-                        string gdiPath = Directory.EnumerateFiles(game.FullPath).FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
+                        string gdiPath = Directory
+                            .EnumerateFiles(gameFilesFolderPath)
+                            .FirstOrDefault(f => System.IO.Path.GetExtension(f) == ".gdi");
                         var newGdi = GdiReader.GetGdiFromFile(gdiPath);
                         newGdi.SaveTo(Path.Combine(destinationFolder, "disc.gdi"), true);
                         newGdi.RenameTrackFiles(destinationFolder);
