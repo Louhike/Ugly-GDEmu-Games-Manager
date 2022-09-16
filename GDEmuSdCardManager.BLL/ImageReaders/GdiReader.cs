@@ -136,7 +136,7 @@ namespace GDEmuSdCardManager.BLL.ImageReaders
             gdi.Tracks = new List<DiscTrack>();
             foreach (var line in gdiContent.Skip(1))
             {
-                var lineSplittedBySpace = line.Split(" ");
+                var lineSplittedBySpace = line.Split(" ").Where(s => !string.IsNullOrEmpty(s));
                 var discTrack = new DiscTrack()
                 {
                     TrackNumber = uint.Parse(lineSplittedBySpace.First()),
