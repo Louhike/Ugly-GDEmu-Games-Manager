@@ -12,6 +12,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -81,7 +82,7 @@ namespace GDEmuSdCardManager
             AddHandler(GridViewColumnHeader.ClickEvent, new RoutedEventHandler(ListView_OnColumnClick));
 
             Title += " - " + currentVersion;
-            CheckUpdate();
+            Task.Run(async () => { await CheckUpdate(); }).Wait();
         }
 
         private void SetupExceptionHandling()
@@ -263,12 +264,12 @@ namespace GDEmuSdCardManager
                 Visibility.Visible : Visibility.Collapsed;
         }
 
-        private void CheckUpdate()
+        private async Task CheckUpdate()
         {
             Version lastVersion;
-            using (System.Net.WebClient wc = new System.Net.WebClient())
+            using (var wc = new HttpClient())
             {
-                string lastVersionString = wc.DownloadString(config.VersionUrl);
+                string lastVersionString = await wc.GetStringAsync(config.VersionUrl);
                 lastVersion = new Version(Regex.Replace(lastVersionString, @"\t|\n|\r", ""));
             }
 
