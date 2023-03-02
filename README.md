@@ -1,3 +1,6 @@
+# Current state
+I haven't been working since a long time and I do not plan to do so in the near future. You can still use it as it is working or use https://github.com/sonik-br/GDMENUCardManager.
+
 # Ugly GDEmu Games Manager
 ![alt text](./capture1.png)
 
